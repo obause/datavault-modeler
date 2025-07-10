@@ -32,10 +32,32 @@ export interface ApiEdge {
   data: any;
 }
 
+// Types for creating nodes/edges (without model field)
+export interface CreateApiNode {
+  id: string;
+  type: "HUB" | "LNK" | "SAT";
+  x: number;
+  y: number;
+  data: any;
+}
+
+export interface CreateApiEdge {
+  id: string;
+  source: string;
+  target: string;
+  data: any;
+}
+
+export interface CreateDataModel {
+  name: string;
+  nodes?: CreateApiNode[];
+  edges?: CreateApiEdge[];
+}
+
 export const modelAPI = {
   getAllModels: () => api.get<DataModel[]>("/models/"),
   getModel: (id: string) => api.get<DataModel>(`/models/${id}/`),
-  createModel: (model: Partial<DataModel>) => api.post<DataModel>("/models/", model),
-  updateModel: (id: string, model: Partial<DataModel>) => api.put<DataModel>(`/models/${id}/`, model),
+  createModel: (model: CreateDataModel) => api.post<DataModel>("/models/", model),
+  updateModel: (id: string, model: Partial<CreateDataModel>) => api.put<DataModel>(`/models/${id}/`, model),
   deleteModel: (id: string) => api.delete(`/models/${id}/`),
 }; 
