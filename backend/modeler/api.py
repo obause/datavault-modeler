@@ -1,7 +1,8 @@
 from rest_framework import viewsets, serializers
 from rest_framework.response import Response
 from rest_framework import status
-from .models import DataModel, Node, Edge
+from rest_framework.decorators import action
+from .models import DataModel, Node, Edge, Settings
 import logging
 
 logger = logging.getLogger(__name__)
@@ -26,6 +27,16 @@ class EdgeCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Edge
         fields = ["id", "source", "target", "data"]
+
+class SettingsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Settings
+        fields = [
+            'id', 'theme', 'auto_save', 'auto_save_interval', 'snap_to_grid', 
+            'grid_size', 'edge_type', 'floating_edges', 'edge_animation', 
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
 
 class DataModelSerializer(serializers.ModelSerializer):
     nodes = NodeSerializer(many=True, read_only=True)
@@ -165,4 +176,68 @@ class DataModelViewSet(viewsets.ModelViewSet):
             return Response(
                 {"error": str(e), "details": "Check server logs for more information"}, 
                 status=status.HTTP_400_BAD_REQUEST
-            ) 
+            )
+
+class SettingsViewSet(viewsets.ViewSet):
+    """
+    Custom ViewSet for singleton Settings object.
+    Handles all operations at the collection level since there's only one settings instance.
+    """
+    
+    def list(self, request):
+        """GET /api/settings/ - Get the settings"""
+        settings = Settings.get_instance()
+        serializer = SettingsSerializer(settings)
+        return Response(serializer.data)
+    
+    def create(self, request):
+        """POST /api/settings/ - Update settings (same as patch for singleton)"""
+        settings = Settings.get_instance()
+        serializer = SettingsSerializer(settings, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    def update(self, request, pk=None):
+        """PUT /api/settings/{id}/ - Update settings"""
+        settings = Settings.get_instance()
+        serializer = SettingsSerializer(settings, data=request.data, partial=False)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
+    
+    def partial_update(self, request, pk=None):
+        """PATCH /api/settings/{id}/ - Partially update settings"""
+        settings = Settings.get_instance()
+        serializer = SettingsSerializer(settings, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
+    
+    @action(detail=False, methods=['patch'])
+    def patch_settings(self, request):
+        """PATCH /api/settings/ - Handle PATCH at collection level"""
+        settings = Settings.get_instance()
+        serializer = SettingsSerializer(settings, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
+    
+    @action(detail=False, methods=['post'])
+    def reset(self, request):
+        """POST /api/settings/reset/ - Reset settings to defaults"""
+        settings = Settings.get_instance()
+        # Reset to default values
+        settings.theme = 'light'
+        settings.auto_save = True
+        settings.auto_save_interval = 30
+        settings.snap_to_grid = True
+        settings.grid_size = 16
+        settings.default_hub_prefix = 'HUB_'
+        settings.default_link_prefix = 'LNK_'
+        settings.default_satellite_prefix = 'SAT_'
+        settings.export_format = 'json'
+        settings.save()
+        
+        serializer = SettingsSerializer(settings)
+        return Response(serializer.data) 

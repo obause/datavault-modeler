@@ -18,12 +18,32 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from modeler.api import DataModelViewSet
+from modeler.api import DataModelViewSet, SettingsViewSet
 
 router = DefaultRouter()
 router.register(r"models", DataModelViewSet)
 
+# Custom URL patterns for settings to handle PATCH at collection level
+settings_list = SettingsViewSet.as_view({
+    'get': 'list',
+    'post': 'create',
+    'patch': 'patch_settings'  # Custom action for PATCH at collection level
+})
+
+settings_detail = SettingsViewSet.as_view({
+    'get': 'list',  # Return the singleton for any detail view
+    'put': 'update',
+    'patch': 'partial_update'
+})
+
+settings_reset = SettingsViewSet.as_view({
+    'post': 'reset'
+})
+
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/", include(router.urls)),
+    path("api/settings/", settings_list, name="settings-list"),
+    path("api/settings/<uuid:pk>/", settings_detail, name="settings-detail"),
+    path("api/settings/reset/", settings_reset, name="settings-reset"),
 ]

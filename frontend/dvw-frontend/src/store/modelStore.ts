@@ -1,7 +1,8 @@
 import { create } from "zustand";
 import { applyNodeChanges, applyEdgeChanges } from "@xyflow/react";
 import type { Node, Edge, NodeChange, EdgeChange } from "@xyflow/react";
-import { modelAPI, type DataModel, type ApiNode, type ApiEdge } from "../api";
+import { modelAPI, settingsAPI, type DataModel, type ApiNode, type ApiEdge, type Settings, type UpdateSettings } from "../api";
+import { showNotification } from "./notificationStore";
 
 // localStorage key for persisting current model
 const STORAGE_KEY = 'datavault-current-model';
@@ -72,6 +73,15 @@ interface ModelState {
   error: string | null;
   selectedNodeId: string | null;
   propertyPanelOpen: boolean;
+  // Settings state
+  settings: Settings | null;
+  settingsLoading: boolean;
+  settingsError: string | null;
+  settingsPanelOpen: boolean;
+  // Auto-save state
+  autoSaveTimer: number | null;
+  lastSaveTime: number | null;
+  hasUnsavedChanges: boolean;
   setNodes: (changes: NodeChange[]) => void;
   setEdges: (changes: EdgeChange[]) => void;
   updateEdges: (edges: Edge[]) => void;
@@ -89,6 +99,19 @@ interface ModelState {
   openPropertyPanel: (nodeId: string) => void;
   closePropertyPanel: () => void;
   clearPersistedState: () => void;
+  // Settings actions
+  loadSettings: () => Promise<void>;
+  updateSettings: (settings: UpdateSettings) => Promise<void>;
+  resetSettings: () => Promise<void>;
+  openSettingsPanel: () => void;
+  closeSettingsPanel: () => void;
+  // Auto-save actions
+  startAutoSave: () => void;
+  stopAutoSave: () => void;
+  triggerAutoSave: () => Promise<void>;
+  markUnsavedChanges: () => void;
+  // Edge update actions
+  updateEdgeTypes: () => void;
 }
 
 // Transform API node to React Flow format
@@ -106,15 +129,21 @@ const transformNodeFromApi = (apiNode: ApiNode): Node => ({
 
 
 // Transform API edge to React Flow format
-const transformEdgeFromApi = (apiEdge: ApiEdge): Edge => ({
-  id: apiEdge.id,
-  source: apiEdge.source,
-  target: apiEdge.target,
-  type: 'floating',
-  style: { stroke: '#2d2382', strokeWidth: 3, strokeDasharray: '5,5' },
-  animated: true,
-  data: apiEdge.data
-});
+const transformEdgeFromApi = (apiEdge: ApiEdge, settings?: Settings | null): Edge => {
+  const edgeType = settings?.edge_type || 'smoothstep';
+  const isFloating = settings?.floating_edges ?? true;
+  const isAnimated = settings?.edge_animation ?? true;
+  
+  return {
+    id: apiEdge.id,
+    source: apiEdge.source,
+    target: apiEdge.target,
+    type: isFloating ? 'floating' : edgeType,
+    style: { stroke: '#2d2382', strokeWidth: 3, strokeDasharray: '5,5' },
+    animated: isAnimated,
+    data: apiEdge.data
+  };
+};
 
 // Load initial state from localStorage
 const persistedState = loadPersistedModelState();
@@ -137,9 +166,21 @@ const useStore = create<ModelState>((set, get) => ({
   error: null,
   selectedNodeId: null,
   propertyPanelOpen: false,
+  // Settings state
+  settings: null,
+  settingsLoading: false,
+  settingsError: null,
+  settingsPanelOpen: false,
+  // Auto-save state
+  autoSaveTimer: null,
+  lastSaveTime: null,
+  hasUnsavedChanges: false,
   setNodes: (changes) =>
     set((state) => {
-      const newState = { nodes: applyNodeChanges(changes, state.nodes) };
+      const newState = { 
+        nodes: applyNodeChanges(changes, state.nodes),
+        hasUnsavedChanges: true
+      };
       persistModelState({
         nodes: newState.nodes,
         edges: state.edges,
@@ -150,7 +191,10 @@ const useStore = create<ModelState>((set, get) => ({
     }),
   setEdges: (changes) =>
     set((state) => {
-      const newState = { edges: applyEdgeChanges(changes, state.edges) };
+      const newState = { 
+        edges: applyEdgeChanges(changes, state.edges),
+        hasUnsavedChanges: true
+      };
       persistModelState({
         nodes: state.nodes,
         edges: newState.edges,
@@ -276,9 +320,17 @@ const useStore = create<ModelState>((set, get) => ({
 
   saveModel: async (modelName) => {
     const { nodes, edges, currentModelId, currentModelName } = get();
-    const finalModelName = modelName || currentModelName;
+    
+    // Determine if this is a manual save (user-initiated) vs auto-save
+    const isAutoSave = modelName === "__AUTO_SAVE__";
+    const finalModelName = isAutoSave ? currentModelName : (modelName || currentModelName);
     
     set({ isLoading: true, error: null });
+    
+    // Show loading notification for manual saves
+    if (!isAutoSave) {
+      showNotification.info("Saving...", "Saving model to server", 0); // No auto-dismiss for loading
+    }
     
     try {
       // Transform nodes and edges to API format
@@ -310,6 +362,10 @@ const useStore = create<ModelState>((set, get) => ({
         // Update existing model
         const response = await modelAPI.updateModel(currentModelId, modelData);
         console.log("Model updated:", response.data);
+        
+        if (!isAutoSave) {
+          showNotification.success("Model Updated", `"${finalModelName}" has been saved successfully`);
+        }
       } else {
         // Create new model
         const response = await modelAPI.createModel(modelData);
@@ -327,12 +383,30 @@ const useStore = create<ModelState>((set, get) => ({
         });
         
         console.log("New model created:", response.data);
+        
+        if (!isAutoSave) {
+          showNotification.success("Model Created", `"${finalModelName}" has been created successfully`);
+        }
+      }
+      
+      set({ hasUnsavedChanges: false, lastSaveTime: Date.now() });
+      
+      // Show auto-save notification for automatic saves
+      if (isAutoSave) {
+        showNotification.success("Auto-saved", "Model saved automatically");
       }
       
       console.log("Model saved successfully");
     } catch (error) {
       console.error("Error saving model:", error);
       set({ error: "Failed to save model" });
+      
+      if (!isAutoSave) {
+        showNotification.error("Save Failed", "Failed to save the model to server");
+      } else {
+        showNotification.error("Auto-save failed", "Failed to automatically save the model");
+      }
+      throw error; // Re-throw for auto-save error handling
     } finally {
       set({ isLoading: false });
     }
@@ -341,18 +415,22 @@ const useStore = create<ModelState>((set, get) => ({
   loadModel: async (modelId) => {
     set({ isLoading: true, error: null });
     
+    // Show loading notification
+    showNotification.info("Loading...", "Loading model from server", 0); // No auto-dismiss for loading
+    
     try {
       const response = await modelAPI.getModel(modelId);
       const model = response.data;
       
       const transformedNodes = model.nodes.map(transformNodeFromApi);
-      const transformedEdges = model.edges.map(transformEdgeFromApi);
+      const transformedEdges = model.edges.map(apiEdge => transformEdgeFromApi(apiEdge, get().settings));
       
       const newState = {
         nodes: transformedNodes,
         edges: transformedEdges,
         currentModelId: model.id,
         currentModelName: model.name,
+        hasUnsavedChanges: false, // Reset unsaved changes when loading
       };
       
       set(newState);
@@ -365,10 +443,12 @@ const useStore = create<ModelState>((set, get) => ({
         currentModelName: model.name,
       });
       
+      showNotification.success("Model Loaded", `"${model.name}" has been loaded successfully`);
       console.log("Model loaded successfully:", model.name);
     } catch (error) {
       console.error("Error loading model:", error);
       set({ error: "Failed to load model" });
+      showNotification.error("Load Failed", "Failed to load the model from server");
     } finally {
       set({ isLoading: false });
     }
@@ -380,9 +460,11 @@ const useStore = create<ModelState>((set, get) => ({
     try {
       const response = await modelAPI.getAllModels();
       set({ availableModels: response.data });
+      console.log(`Loaded ${response.data.length} models from server`);
     } catch (error) {
       console.error("Error loading available models:", error);
       set({ error: "Failed to load available models" });
+      showNotification.error("Load Failed", "Failed to load available models from server");
     } finally {
       set({ isLoading: false });
     }
@@ -409,9 +491,16 @@ const useStore = create<ModelState>((set, get) => ({
   },
 
   deleteModel: async (modelId) => {
-    const { currentModelId } = get();
+    const { currentModelId, availableModels } = get();
+    
+    // Find the model name for better notification
+    const modelToDelete = availableModels.find(model => model.id === modelId);
+    const modelName = modelToDelete?.name || "Unknown Model";
     
     set({ isLoading: true, error: null });
+    
+    // Show loading notification
+    showNotification.info("Deleting...", `Deleting "${modelName}" from server`, 0); // No auto-dismiss for loading
     
     try {
       await modelAPI.deleteModel(modelId);
@@ -423,6 +512,7 @@ const useStore = create<ModelState>((set, get) => ({
           edges: [],
           currentModelId: null,
           currentModelName: "Untitled Model",
+          hasUnsavedChanges: false,
         };
         
         set(newState);
@@ -440,10 +530,12 @@ const useStore = create<ModelState>((set, get) => ({
       const response = await modelAPI.getAllModels();
       set({ availableModels: response.data });
       
+      showNotification.success("Model Deleted", `"${modelName}" has been deleted successfully`);
       console.log("Model deleted successfully");
     } catch (error) {
       console.error("Error deleting model:", error);
       set({ error: "Failed to delete model" });
+      showNotification.error("Delete Failed", `Failed to delete "${modelName}" from server`);
     } finally {
       set({ isLoading: false });
     }
@@ -460,6 +552,168 @@ const useStore = create<ModelState>((set, get) => ({
   clearPersistedState: () => {
     clearPersistedModelState();
     console.log("Persisted model state cleared");
+  },
+
+  // Settings actions
+  loadSettings: async () => {
+    set({ settingsLoading: true, settingsError: null });
+    try {
+      const response = await settingsAPI.getSettings();
+      set({ settings: response.data, settingsLoading: false });
+      
+      // Start auto-save if enabled
+      const { startAutoSave } = get();
+      startAutoSave();
+      
+      console.log("Settings loaded successfully");
+    } catch (error) {
+      console.error("Error loading settings:", error);
+      set({ settingsError: "Failed to load settings", settingsLoading: false });
+      showNotification.error("Settings Load Failed", "Failed to load settings from server");
+    }
+  },
+  updateSettings: async (settings) => {
+    set({ settingsLoading: true, settingsError: null });
+    
+    // Show loading notification
+    showNotification.info("Updating...", "Saving settings to server", 0); // No auto-dismiss for loading
+    
+    try {
+      const response = await settingsAPI.updateSettings(settings);
+      set({ settings: response.data, settingsLoading: false });
+      
+      // Restart auto-save with new settings
+      const { startAutoSave, stopAutoSave, updateEdgeTypes } = get();
+      stopAutoSave();
+      startAutoSave();
+      
+      // Update existing edges with new settings
+      updateEdgeTypes();
+      
+      showNotification.success("Settings Saved", "Your preferences have been saved successfully");
+      console.log("Settings updated:", response.data);
+    } catch (error) {
+      console.error("Error updating settings:", error);
+      set({ settingsError: "Failed to update settings", settingsLoading: false });
+      showNotification.error("Settings Update Failed", "Failed to save settings to server");
+    }
+  },
+  resetSettings: async () => {
+    set({ settingsLoading: true, settingsError: null });
+    
+    // Show loading notification
+    showNotification.info("Resetting...", "Resetting settings to defaults", 0); // No auto-dismiss for loading
+    
+    try {
+      const response = await settingsAPI.resetSettings();
+      set({ settings: response.data, settingsLoading: false });
+      
+      // Restart auto-save with reset settings
+      const { startAutoSave, stopAutoSave, updateEdgeTypes } = get();
+      stopAutoSave();
+      startAutoSave();
+      
+      // Update existing edges with reset settings
+      updateEdgeTypes();
+      
+      showNotification.success("Settings Reset", "All settings have been reset to defaults");
+      console.log("Settings reset:", response.data);
+    } catch (error) {
+      console.error("Error resetting settings:", error);
+      set({ settingsError: "Failed to reset settings", settingsLoading: false });
+      showNotification.error("Settings Reset Failed", "Failed to reset settings on server");
+    }
+  },
+  openSettingsPanel: () => {
+    set({ settingsPanelOpen: true });
+  },
+  closeSettingsPanel: () => {
+    set({ settingsPanelOpen: false });
+  },
+  
+  // Auto-save actions
+  startAutoSave: () => {
+    const state = get();
+    if (state.autoSaveTimer) {
+      clearInterval(state.autoSaveTimer);
+    }
+    
+    // Only start auto-save if settings are loaded and auto-save is enabled
+    if (state.settings?.auto_save) {
+      const interval = (state.settings.auto_save_interval || 30) * 1000; // Convert to milliseconds
+      const timer = window.setInterval(() => {
+        const currentState = get();
+        if (currentState.hasUnsavedChanges) {
+          currentState.triggerAutoSave();
+        }
+      }, interval);
+      
+      set({ autoSaveTimer: timer });
+    }
+  },
+  
+  stopAutoSave: () => {
+    const state = get();
+    if (state.autoSaveTimer) {
+      clearInterval(state.autoSaveTimer);
+      set({ autoSaveTimer: null });
+    }
+  },
+  
+  triggerAutoSave: async () => {
+    const state = get();
+    try {
+      await state.saveModel("__AUTO_SAVE__"); // Special flag to indicate auto-save
+      set({ 
+        lastSaveTime: Date.now(), 
+        hasUnsavedChanges: false 
+      });
+    } catch (error) {
+      console.error("Auto-save failed:", error);
+      // Error notifications are handled in saveModel
+    }
+  },
+  
+  markUnsavedChanges: () => {
+    set({ hasUnsavedChanges: true });
+  },
+  
+  // Edge update actions
+  updateEdgeTypes: () => {
+    const state = get();
+    if (!state.settings) return;
+    
+    const edgeType = state.settings.edge_type || 'smoothstep';
+    const isFloating = state.settings.floating_edges ?? true;
+    const isAnimated = state.settings.edge_animation ?? true;
+    
+    // Update existing edges with new settings
+    const updatedEdges = state.edges.map(edge => {
+      // Find the connected nodes to determine edge color
+      const sourceNode = state.nodes.find(n => n.id === edge.source);
+      const targetNode = state.nodes.find(n => n.id === edge.target);
+      
+      // Use satellite color if either node is a satellite
+      const isSatelliteConnection = sourceNode?.data.type === 'SAT' || targetNode?.data.type === 'SAT';
+      const edgeColor = isSatelliteConnection ? '#f59e0b' : '#2d2382';
+      
+      return {
+        ...edge,
+        type: isFloating ? 'floating' : edgeType,
+        style: { stroke: edgeColor, strokeWidth: 3, strokeDasharray: '5,5' },
+        animated: isAnimated,
+      };
+    });
+    
+    set({ edges: updatedEdges, hasUnsavedChanges: true });
+    
+    // Persist the updated edges
+    persistModelState({
+      nodes: state.nodes,
+      edges: updatedEdges,
+      currentModelId: state.currentModelId,
+      currentModelName: state.currentModelName,
+    });
   },
 }));
 

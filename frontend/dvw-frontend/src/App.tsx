@@ -9,7 +9,7 @@ import {
   type Node,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import useStore from './store/modelStore';
 import Button from './components/Button';
 import Card from './components/Card';
@@ -18,6 +18,9 @@ import ModelManager from './components/ModelManager';
 import DataVaultNode from './components/DataVaultNode';
 import FloatingEdge from './components/FloatingEdge';
 import PropertyPanel from './components/PropertyPanel';
+import Settings from './components/Settings';
+import NotificationContainer from './components/NotificationContainer';
+import { snapToGrid } from './utils/snapToGrid';
 
 const nodeTypes = {
   hub: DataVaultNode,
@@ -48,11 +51,42 @@ function App() {
     selectedNodeId,
     propertyPanelOpen,
     closePropertyPanel,
-    updateNodeProperty
+    updateNodeProperty,
+    settingsPanelOpen,
+    openSettingsPanel,
+    closeSettingsPanel,
+    settings,
+    loadSettings,
+    updateEdgeTypes,
   } = useStore();
+
+  // Load settings on app start
+  useEffect(() => {
+    loadSettings();
+  }, [loadSettings]);
+
+  // Update edge types when settings change
+  useEffect(() => {
+    if (settings) {
+      updateEdgeTypes();
+    }
+  }, [settings, updateEdgeTypes]);
 
   const onConnect = useCallback(
     (params: Connection) => {
+      // Find the connected nodes to determine edge color
+      const sourceNode = nodes.find(n => n.id === params.source);
+      const targetNode = nodes.find(n => n.id === params.target);
+      
+      // Use satellite color if either node is a satellite
+      const isSatelliteConnection = sourceNode?.data.type === 'SAT' || targetNode?.data.type === 'SAT';
+      const edgeColor = isSatelliteConnection ? '#f59e0b' : '#2d2382';
+      
+      // Get edge settings
+      const edgeType = settings?.edge_type || 'smoothstep';
+      const isFloating = settings?.floating_edges ?? true;
+      const isAnimated = settings?.edge_animation ?? true;
+      
       // Create edge with proper UUID
       const newEdge: Edge = {
         id: crypto.randomUUID(),
@@ -60,28 +94,35 @@ function App() {
         target: params.target!,
         sourceHandle: params.sourceHandle,
         targetHandle: params.targetHandle,
-        type: 'floating',
-        style: { stroke: '#2d2382', strokeWidth: 3, strokeDasharray: '5,5' },
-        animated: true,
+        type: isFloating ? 'floating' : edgeType,
+        style: { stroke: edgeColor, strokeWidth: 3, strokeDasharray: '5,5' },
+        animated: isAnimated,
       };
       const newEdges = [...edges, newEdge];
       updateEdges(newEdges);
     },
-    [updateEdges, edges]
+    [updateEdges, edges, nodes, settings]
   );
 
   const addNode = useCallback((type: 'HUB' | 'LNK' | 'SAT') => {
+    const basePosition = { x: Math.random() * 500, y: Math.random() * 300 };
+    
+    // Apply snap to grid if enabled
+    const position = settings?.snap_to_grid 
+      ? snapToGrid(basePosition, settings.grid_size || 16)
+      : basePosition;
+    
     const newNode: Node = {
       id: crypto.randomUUID(),
       type: type.toLowerCase(),
-      position: { x: Math.random() * 500, y: Math.random() * 300 },
+      position,
       data: { 
         label: `${type} ${Date.now() % 1000}`,
         type: type,
       },
     };
     addNodeToStore(newNode);
-  }, [addNodeToStore]);
+  }, [addNodeToStore, settings]);
 
   const onAddHubNode = useCallback(() => {
     addNode("HUB");
@@ -102,6 +143,15 @@ function App() {
     openPropertyPanel(node.id);
   }, []);
 
+  // Get snap to grid settings
+  const snapToGridEnabled = settings?.snap_to_grid || false;
+  const gridSize = settings?.grid_size || 16;
+
+  // Get edge settings
+  const edgeType = settings?.edge_type || 'smoothstep';
+  const isFloating = settings?.floating_edges ?? true;
+  const isAnimated = settings?.edge_animation ?? true;
+
   return (
     <div className="w-screen h-screen bg-gradient-to-br from-surface-50 to-surface-100">
       <ReactFlow
@@ -115,20 +165,22 @@ function App() {
         className="bg-transparent"
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
+        snapToGrid={snapToGridEnabled}
+        snapGrid={[gridSize, gridSize]}
         defaultEdgeOptions={{
-          type: 'floating',
+          type: isFloating ? 'floating' : edgeType,
           style: { stroke: '#2d2382', strokeWidth: 3, strokeDasharray: '5,5' },
-          animated: true,
+          animated: isAnimated,
         }}
       >
-        <Background color="#e5e5e5" gap={16} />
+        <Background color="#e5e5e5" gap={gridSize} />
         <Controls className="bg-white border border-surface-200 rounded-lg shadow-sm" />
         <MiniMap 
           className="bg-white border border-surface-200 rounded-lg shadow-sm overflow-hidden"
           nodeColor={(node) => {
             if (node.data?.type === 'HUB') return '#2d2382';
             if (node.data?.type === 'LNK') return '#00aabe';
-            if (node.data?.type === 'SAT') return '#4747ff';
+            if (node.data?.type === 'SAT') return '#f59e0b';
             return '#94a3b8';
           }}
         />
@@ -209,6 +261,19 @@ function App() {
                 </h2>
                 <ModelManager />
               </div>
+
+              {/* Settings */}
+              <div className="pt-3 border-t border-surface-200">
+                <Button
+                  variant="ghost"
+                  size="md"
+                  onClick={openSettingsPanel}
+                  leftIcon={<Icon name="settings" size="sm" />}
+                  fullWidth
+                >
+                  Settings
+                </Button>
+              </div>
             </div>
           </Card>
         </Panel>
@@ -240,6 +305,15 @@ function App() {
         allNodes={nodes}
         allEdges={edges}
       />
+
+      {/* Settings Panel */}
+      <Settings
+        isOpen={settingsPanelOpen}
+        onClose={closeSettingsPanel}
+      />
+      
+      {/* Notification Container */}
+      <NotificationContainer />
     </div>
   );
 }

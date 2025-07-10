@@ -32,6 +32,31 @@ export interface ApiEdge {
   data: any;
 }
 
+export interface Settings {
+  id: string;
+  theme: 'light' | 'dark' | 'auto';
+  auto_save: boolean;
+  auto_save_interval: number;
+  snap_to_grid: boolean;
+  grid_size: number;
+  edge_type: 'bezier' | 'straight' | 'step' | 'smoothstep';
+  floating_edges: boolean;
+  edge_animation: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UpdateSettings {
+  theme?: 'light' | 'dark' | 'auto';
+  auto_save?: boolean;
+  auto_save_interval?: number;
+  snap_to_grid?: boolean;
+  grid_size?: number;
+  edge_type?: 'bezier' | 'straight' | 'step' | 'smoothstep';
+  floating_edges?: boolean;
+  edge_animation?: boolean;
+}
+
 // Types for creating nodes/edges (without model field)
 export interface CreateApiNode {
   id: string;
@@ -60,4 +85,10 @@ export const modelAPI = {
   createModel: (model: CreateDataModel) => api.post<DataModel>("/models/", model),
   updateModel: (id: string, model: Partial<CreateDataModel>) => api.put<DataModel>(`/models/${id}/`, model),
   deleteModel: (id: string) => api.delete(`/models/${id}/`),
+};
+
+export const settingsAPI = {
+  getSettings: () => api.get<Settings>("/settings/"),
+  updateSettings: (settings: UpdateSettings) => api.patch<Settings>("/settings/", settings),
+  resetSettings: () => api.post<Settings>("/settings/reset/"),
 }; 

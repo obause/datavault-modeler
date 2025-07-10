@@ -97,8 +97,8 @@ const DataVaultNode = ({ id, data, selected }: DataVaultNodeProps) => {
         title: isTransactional ? 'Non-historized Link' : 'Link',
       },
       SAT: {
-        background: 'linear-gradient(135deg, #4747ff 0%, #3333ff 100%)',
-        border: '2px solid #4747ff',
+        background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+        border: '2px solid #f59e0b',
         color: 'white',
         icon: 'satellite' as const,
         title: 'Satellite',
@@ -209,8 +209,9 @@ const DataVaultNode = ({ id, data, selected }: DataVaultNodeProps) => {
       {/* Node Body */}
       <div 
         className={clsx(
-          'px-4 py-2 rounded-lg shadow-md transition-all duration-200 min-w-[140px] cursor-pointer hover:shadow-lg relative',
-          selected && 'ring-2 ring-primary-500 ring-offset-2'
+          'px-4 rounded-lg shadow-md transition-all duration-200 min-w-[140px] cursor-pointer hover:shadow-lg relative',
+          selected && 'ring-2 ring-primary-500 ring-offset-2',
+          hashkeyName ? 'py-2 pb-6' : 'py-2'
         )}
         style={{
           background: nodeStyle.background,
@@ -222,7 +223,7 @@ const DataVaultNode = ({ id, data, selected }: DataVaultNodeProps) => {
         <div className="flex items-center gap-3">
           {/* Left Icon */}
           <div className="flex-shrink-0 relative">
-            <Icon name={nodeStyle.icon} size="lg" className="opacity-90" />
+            <Icon name={nodeStyle.icon} size="xl" className="opacity-90" />
             {/* Transactional Link Indicator */}
             {isTransactionalLink && (
               <div className="absolute -top-1 -right-1 w-4 h-4 bg-white/90 rounded-full flex items-center justify-center">
@@ -273,7 +274,7 @@ const DataVaultNode = ({ id, data, selected }: DataVaultNodeProps) => {
 
         {/* Hashkey Display - bottom right */}
         {hashkeyName && (
-          <div className="absolute bottom-1 right-2 text-xs font-light opacity-60">
+          <div className="absolute bottom-1.5 right-2 text-xs font-light opacity-70">
             {hashkeyName}
           </div>
         )}
@@ -289,7 +290,7 @@ const DataVaultNode = ({ id, data, selected }: DataVaultNodeProps) => {
             title="Rename node"
             className="!p-1.5"
           >
-            <Icon name="edit" size="sm" />
+            <Icon name="edit" size="md" />
           </Button>
           
           <Button
@@ -299,7 +300,7 @@ const DataVaultNode = ({ id, data, selected }: DataVaultNodeProps) => {
             title="Clone node"
             className="!p-1.5"
           >
-            <Icon name="plus" size="sm" />
+            <Icon name="plus" size="md" />
           </Button>
           
           <Button
@@ -309,7 +310,7 @@ const DataVaultNode = ({ id, data, selected }: DataVaultNodeProps) => {
             title="Delete node"
             className="!p-1.5 hover:!bg-red-50 hover:!text-red-600"
           >
-            <Icon name="trash" size="sm" />
+            <Icon name="trash" size="md" />
           </Button>
         </div>
       )}
