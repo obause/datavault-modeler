@@ -36,8 +36,9 @@ class DataModelSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 class DataModelCreateUpdateSerializer(serializers.ModelSerializer):
-    nodes = NodeCreateSerializer(many=True, required=False)
-    edges = EdgeCreateSerializer(many=True, required=False)
+    # Use raw data instead of nested serializers to avoid validation conflicts
+    nodes = serializers.ListField(required=False)
+    edges = serializers.ListField(required=False)
     
     class Meta:
         model = DataModel
@@ -80,30 +81,65 @@ class DataModelCreateUpdateSerializer(serializers.ModelSerializer):
         
         # Update nodes if provided
         if nodes_data is not None:
-            # Delete existing nodes and create new ones (simple approach)
-            instance.nodes.all().delete()
+            # Validate nodes data
+            for node_data in nodes_data:
+                if not isinstance(node_data, dict) or 'id' not in node_data:
+                    raise serializers.ValidationError("Invalid node data format")
+            
+            # Get existing node IDs
+            existing_node_ids = set(instance.nodes.values_list('id', flat=True))
+            incoming_node_ids = set(node_data['id'] for node_data in nodes_data)
+            
+            # Delete nodes that are no longer present
+            nodes_to_delete = existing_node_ids - incoming_node_ids
+            instance.nodes.filter(id__in=nodes_to_delete).delete()
+            
+            # Update or create nodes
             for node_data in nodes_data:
                 try:
-                    Node.objects.create(
-                        model=instance,
-                        **node_data
+                    Node.objects.update_or_create(
+                        id=node_data['id'],
+                        defaults={
+                            'model': instance,
+                            'type': node_data['type'],
+                            'x': node_data['x'],
+                            'y': node_data['y'],
+                            'data': node_data['data'],
+                        }
                     )
                 except Exception as e:
-                    logger.error(f"Error creating node: {e}, data: {node_data}")
+                    logger.error(f"Error updating/creating node: {e}, data: {node_data}")
                     raise
         
         # Update edges if provided
         if edges_data is not None:
-            # Delete existing edges and create new ones (simple approach)
-            instance.edges.all().delete()
+            # Validate edges data
+            for edge_data in edges_data:
+                if not isinstance(edge_data, dict) or 'id' not in edge_data:
+                    raise serializers.ValidationError("Invalid edge data format")
+            
+            # Get existing edge IDs
+            existing_edge_ids = set(instance.edges.values_list('id', flat=True))
+            incoming_edge_ids = set(edge_data['id'] for edge_data in edges_data)
+            
+            # Delete edges that are no longer present
+            edges_to_delete = existing_edge_ids - incoming_edge_ids
+            instance.edges.filter(id__in=edges_to_delete).delete()
+            
+            # Update or create edges
             for edge_data in edges_data:
                 try:
-                    Edge.objects.create(
-                        model=instance,
-                        **edge_data
+                    Edge.objects.update_or_create(
+                        id=edge_data['id'],
+                        defaults={
+                            'model': instance,
+                            'source': edge_data['source'],
+                            'target': edge_data['target'],
+                            'data': edge_data['data'],
+                        }
                     )
                 except Exception as e:
-                    logger.error(f"Error creating edge: {e}, data: {edge_data}")
+                    logger.error(f"Error updating/creating edge: {e}, data: {edge_data}")
                     raise
         
         return instance

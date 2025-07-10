@@ -1,96 +1,106 @@
-import { useCallback } from "react";
 import {
   ReactFlow,
-  addEdge,
   Background,
   Controls,
   MiniMap,
   Panel,
   type Connection,
-} from "@xyflow/react";
-import "@xyflow/react/dist/style.css";
-import useStore from "./store/modelStore";
-import ModelManager from "./components/ModelManager";
-import Button from "./components/Button";
-import Card from "./components/Card";
-import Icon from "./components/Icon";
+  type Edge,
+  type Node,
+} from '@xyflow/react';
+import '@xyflow/react/dist/style.css';
+import React, { useCallback } from 'react';
+import useStore from './store/modelStore';
+import Button from './components/Button';
+import Card from './components/Card';
+import Icon from './components/Icon';
+import ModelManager from './components/ModelManager';
+import DataVaultNode from './components/DataVaultNode';
+import FloatingEdge from './components/FloatingEdge';
+import PropertyPanel from './components/PropertyPanel';
+
+const nodeTypes = {
+  hub: DataVaultNode,
+  link: DataVaultNode,
+  satellite: DataVaultNode,
+  lnk: DataVaultNode,
+  sat: DataVaultNode,
+  HUB: DataVaultNode,
+  LNK: DataVaultNode,
+  SAT: DataVaultNode,
+  default: DataVaultNode,
+};
+
+const edgeTypes = {
+  floating: FloatingEdge,
+};
 
 function App() {
-  const { nodes, edges, setNodes, setEdges, updateEdges, addNode, currentModelName, error } = useStore();
+  const { 
+    nodes, 
+    edges, 
+    setNodes, 
+    setEdges, 
+    updateEdges, 
+    addNode: addNodeToStore, 
+    currentModelName, 
+    error,
+    selectedNodeId,
+    propertyPanelOpen,
+    closePropertyPanel,
+    updateNodeProperty
+  } = useStore();
 
   const onConnect = useCallback(
     (params: Connection) => {
-      const newEdges = addEdge(params, edges);
+      // Create edge with proper UUID
+      const newEdge: Edge = {
+        id: crypto.randomUUID(),
+        source: params.source!,
+        target: params.target!,
+        sourceHandle: params.sourceHandle,
+        targetHandle: params.targetHandle,
+        type: 'floating',
+        style: { stroke: '#2d2382', strokeWidth: 3, strokeDasharray: '5,5' },
+        animated: true,
+      };
+      const newEdges = [...edges, newEdge];
       updateEdges(newEdges);
     },
     [updateEdges, edges]
   );
 
-  const onAddHubNode = useCallback(() => {
-    const newNode = {
-      id: `hub-${Date.now()}`,
-      type: "default",
-      position: { x: Math.random() * 400, y: Math.random() * 400 },
+  const addNode = useCallback((type: 'HUB' | 'LNK' | 'SAT') => {
+    const newNode: Node = {
+      id: crypto.randomUUID(),
+      type: type.toLowerCase(),
+      position: { x: Math.random() * 500, y: Math.random() * 300 },
       data: { 
-        label: "Hub Node",
-        type: "HUB",
-      },
-      style: {
-        background: "#3b82f6",
-        color: "white",
-        border: "2px solid #1e40af",
-        borderRadius: "8px",
-        padding: "10px",
-        fontSize: "14px",
-        fontWeight: "500",
+        label: `${type} ${Date.now() % 1000}`,
+        type: type,
       },
     };
-    addNode(newNode);
+    addNodeToStore(newNode);
+  }, [addNodeToStore]);
+
+  const onAddHubNode = useCallback(() => {
+    addNode("HUB");
   }, [addNode]);
 
   const onAddLinkNode = useCallback(() => {
-    const newNode = {
-      id: `link-${Date.now()}`,
-      type: "default",
-      position: { x: Math.random() * 400, y: Math.random() * 400 },
-      data: { 
-        label: "Link Node",
-        type: "LNK",
-      },
-      style: {
-        background: "#10b981",
-        color: "white",
-        border: "2px solid #047857",
-        borderRadius: "8px",
-        padding: "10px",
-        fontSize: "14px",
-        fontWeight: "500",
-      },
-    };
-    addNode(newNode);
+    addNode("LNK");
   }, [addNode]);
 
   const onAddSatelliteNode = useCallback(() => {
-    const newNode = {
-      id: `satellite-${Date.now()}`,
-      type: "default",
-      position: { x: Math.random() * 400, y: Math.random() * 400 },
-      data: { 
-        label: "Satellite Node",
-        type: "SAT",
-      },
-      style: {
-        background: "#f59e0b",
-        color: "white",
-        border: "2px solid #d97706",
-        borderRadius: "8px",
-        padding: "10px",
-        fontSize: "14px",
-        fontWeight: "500",
-      },
-    };
-    addNode(newNode);
+    addNode("SAT");
   }, [addNode]);
+
+  const onNodeClick = useCallback((_event: React.MouseEvent, node: Node) => {
+    // React Flow will handle the selection automatically
+    // We just need to open the property panel
+    const { openPropertyPanel } = useStore.getState();
+    openPropertyPanel(node.id);
+  }, []);
 
   return (
     <div className="w-screen h-screen bg-gradient-to-br from-surface-50 to-surface-100">
@@ -100,17 +110,25 @@ function App() {
         onNodesChange={setNodes}
         onEdgesChange={setEdges}
         onConnect={onConnect}
+        onNodeClick={onNodeClick}
         fitView
         className="bg-transparent"
+        nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
+        defaultEdgeOptions={{
+          type: 'floating',
+          style: { stroke: '#2d2382', strokeWidth: 3, strokeDasharray: '5,5' },
+          animated: true,
+        }}
       >
         <Background color="#e5e5e5" gap={16} />
         <Controls className="bg-white border border-surface-200 rounded-lg shadow-sm" />
         <MiniMap 
           className="bg-white border border-surface-200 rounded-lg shadow-sm overflow-hidden"
           nodeColor={(node) => {
-            if (node.data?.type === 'HUB') return '#3b82f6';
-            if (node.data?.type === 'LNK') return '#10b981';
-            if (node.data?.type === 'SAT') return '#f59e0b';
+            if (node.data?.type === 'HUB') return '#2d2382';
+            if (node.data?.type === 'LNK') return '#00aabe';
+            if (node.data?.type === 'SAT') return '#4747ff';
             return '#94a3b8';
           }}
         />
@@ -211,6 +229,17 @@ function App() {
           </Card>
         </Panel>
       </ReactFlow>
+      
+      {/* Property Panel */}
+      <PropertyPanel
+        nodeId={selectedNodeId}
+        nodeData={selectedNodeId ? nodes.find(node => node.id === selectedNodeId)?.data : null}
+        isOpen={propertyPanelOpen}
+        onClose={closePropertyPanel}
+        onPropertyChange={updateNodeProperty}
+        allNodes={nodes}
+        allEdges={edges}
+      />
     </div>
   );
 }

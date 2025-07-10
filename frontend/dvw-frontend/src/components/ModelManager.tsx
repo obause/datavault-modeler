@@ -15,11 +15,13 @@ const ModelManager: React.FC = () => {
     loadModel,
     loadAvailableModels,
     createNewModel,
+    deleteModel,
   } = useStore();
 
   const [isOpen, setIsOpen] = useState(false);
   const [saveAsName, setSaveAsName] = useState("");
   const [showSaveAs, setShowSaveAs] = useState(false);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -49,6 +51,11 @@ const ModelManager: React.FC = () => {
   const handleNewModel = () => {
     createNewModel();
     setIsOpen(false);
+  };
+
+  const handleDeleteModel = async (modelId: string) => {
+    await deleteModel(modelId);
+    setDeleteConfirmId(null);
   };
 
   const formatDate = (dateString: string) => {
@@ -193,7 +200,7 @@ const ModelManager: React.FC = () => {
                 
                 {isLoading && (
                   <div className="text-center py-8">
-                    <Icon name="loading" size="lg" className="text-surface-400 animate-spin mx-auto mb-2" />
+                    <Icon name="refresh" size="lg" className="text-surface-400 animate-spin mx-auto mb-2" />
                     <p className="text-surface-600">Loading models...</p>
                   </div>
                 )}
@@ -228,20 +235,75 @@ const ModelManager: React.FC = () => {
                               <span>{model.edges.length} edges</span>
                             </div>
                           </div>
-                          <Button
-                            variant="primary"
-                            size="sm"
-                            onClick={() => handleLoad(model.id)}
-                            disabled={isLoading}
-                            leftIcon={<Icon name="download" size="sm" />}
-                          >
-                            Load
-                          </Button>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="primary"
+                              size="sm"
+                              onClick={() => handleLoad(model.id)}
+                              disabled={isLoading}
+                              leftIcon={<Icon name="download" size="sm" />}
+                            >
+                              Load
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setDeleteConfirmId(model.id)}
+                              disabled={isLoading}
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
+                              <Icon name="trash" size="sm" />
+                            </Button>
+                          </div>
                         </div>
                       </Card>
                     ))}
                   </div>
                 )}
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      {deleteConfirmId && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-md">
+            <div className="p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                  <Icon name="trash" size="md" className="text-red-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-surface-900">Delete Model</h3>
+                  <p className="text-sm text-surface-600">This action cannot be undone</p>
+                </div>
+              </div>
+              
+              <p className="text-surface-700 mb-6">
+                Are you sure you want to delete this model? All data will be permanently removed.
+              </p>
+              
+              <div className="flex gap-2 justify-end">
+                <Button
+                  variant="outline"
+                  size="md"
+                  onClick={() => setDeleteConfirmId(null)}
+                  disabled={isLoading}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="primary"
+                  size="md"
+                  onClick={() => handleDeleteModel(deleteConfirmId)}
+                  disabled={isLoading}
+                  isLoading={isLoading}
+                  className="bg-red-600 hover:bg-red-700 text-white"
+                >
+                  Delete
+                </Button>
               </div>
             </div>
           </Card>

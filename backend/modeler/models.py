@@ -12,7 +12,7 @@ class Node(models.Model):
     SAT = "SAT"
     TYPES = [(HUB, "Hub"), (LINK, "Link"), (SAT, "Satellite")]
     
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=True)
     model = models.ForeignKey(DataModel, on_delete=models.CASCADE, related_name="nodes")
     type = models.CharField(max_length=3, choices=TYPES)
     x = models.FloatField()
@@ -20,7 +20,7 @@ class Node(models.Model):
     data = models.JSONField(default=dict)
 
 class Edge(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=True)
     model = models.ForeignKey(DataModel, on_delete=models.CASCADE, related_name="edges")
     source = models.UUIDField()
     target = models.UUIDField()
