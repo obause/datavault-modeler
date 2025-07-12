@@ -20,7 +20,9 @@ export type IconName =
   | 'link'
   | 'satellite'
   | 'edit'
-  | 'close';
+  | 'close'
+  | 'info'
+  | 'mail';
 
 interface IconProps extends SVGAttributes<SVGElement> {
   name: IconName;
@@ -139,8 +141,28 @@ const Icon = ({ name, size = 'md', className, ...props }: IconProps) => {
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/>
       </svg>
     ),
+    info: (
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      </svg>
+    ),
+    mail: (
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+      </svg>
+    ),
   };
   
+  // For custom icons (hub, satellite), we need to render them directly
+  if (name === 'hub' || name === 'satellite') {
+    return (
+      <div className={clsx(sizes[size], className)}>
+        {icons[name]}
+      </div>
+    );
+  }
+
+  // For standard icons, use the default SVG wrapper
   return (
     <svg
       className={clsx(sizes[size], className)}

@@ -22,6 +22,7 @@ import Settings from './components/Settings';
 import NotificationContainer from './components/NotificationContainer';
 import ExportDialog from './components/ExportDialog';
 import SplashScreen from './components/SplashScreen';
+import AboutDialog from './components/AboutDialog';
 import { snapToGrid } from './utils/snapToGrid';
 
 const nodeTypes = {
@@ -64,6 +65,9 @@ function App() {
 
   // Export dialog state
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
+  
+  // About dialog state
+  const [aboutDialogOpen, setAboutDialogOpen] = useState(false);
   
   // Loading state for splash screen
   const [isLoading, setIsLoading] = useState(true);
@@ -310,6 +314,8 @@ function App() {
                   Settings
                 </Button>
               </div>
+
+
             </div>
           </Card>
         </Panel>
@@ -330,6 +336,18 @@ function App() {
           </Card>
         </Panel>
       </ReactFlow>
+      
+      {/* About Button - Bottom of Page */}
+      <div className="fixed bottom-4 left-4 z-40">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setAboutDialogOpen(true)}
+          className="bg-white/80 backdrop-blur-sm border border-surface-200 shadow-sm hover:bg-white/90"
+        >
+          <Icon name="info" size="sm" className="text-surface-600" />
+        </Button>
+      </div>
       
       {/* Property Panel */}
       <PropertyPanel
@@ -354,6 +372,12 @@ function App() {
         onClose={() => setExportDialogOpen(false)}
         nodes={nodes}
         currentModelName={currentModelName}
+      />
+      
+      {/* About Dialog */}
+      <AboutDialog
+        isOpen={aboutDialogOpen}
+        onClose={() => setAboutDialogOpen(false)}
       />
       
       {/* Notification Container */}
