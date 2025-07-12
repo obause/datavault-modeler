@@ -33,10 +33,14 @@ const nodeTypes = {
   lnk: DataVaultNode,
   sat: DataVaultNode,
   ref: DataVaultNode,
+  pit: DataVaultNode,
+  bridge: DataVaultNode,
   HUB: DataVaultNode,
   LNK: DataVaultNode,
   SAT: DataVaultNode,
   REF: DataVaultNode,
+  PIT: DataVaultNode,
+  BRIDGE: DataVaultNode,
   default: DataVaultNode,
 };
 
@@ -110,9 +114,22 @@ function App() {
       const sourceNode = nodes.find(n => n.id === params.source);
       const targetNode = nodes.find(n => n.id === params.target);
       
-      // Use satellite color if either node is a satellite
+      // Determine edge color based on connected nodes
       const isSatelliteConnection = sourceNode?.data.type === 'SAT' || targetNode?.data.type === 'SAT';
-      const edgeColor = isSatelliteConnection ? '#f59e0b' : '#2d2382';
+      const isReferenceConnection = sourceNode?.data.type === 'REF' || targetNode?.data.type === 'REF';
+      const isPitConnection = sourceNode?.data.type === 'PIT' || targetNode?.data.type === 'PIT';
+      const isBridgeConnection = sourceNode?.data.type === 'BRIDGE' || targetNode?.data.type === 'BRIDGE';
+      
+      let edgeColor = '#2d2382'; // default blue
+      if (isSatelliteConnection) {
+        edgeColor = '#f59e0b'; // orange for satellite connections
+      } else if (isReferenceConnection) {
+        edgeColor = '#10b981'; // green for reference connections
+      } else if (isPitConnection) {
+        edgeColor = '#8b5cf6'; // violet for PIT connections
+      } else if (isBridgeConnection) {
+        edgeColor = '#9333ea'; // purple for bridge connections
+      }
       
       // Get edge settings
       const edgeType = settings?.edge_type || 'smoothstep';
@@ -136,7 +153,7 @@ function App() {
     [updateEdges, edges, nodes, settings]
   );
 
-  const addNode = useCallback((type: 'HUB' | 'LNK' | 'SAT' | 'REF') => {
+  const addNode = useCallback((type: 'HUB' | 'LNK' | 'SAT' | 'REF' | 'PIT' | 'BRIDGE') => {
     const basePosition = { x: Math.random() * 500, y: Math.random() * 300 };
     
     // Apply snap to grid if enabled
@@ -172,6 +189,14 @@ function App() {
 
   const onAddReferenceNode = useCallback(() => {
     addNode("REF");
+  }, [addNode]);
+
+  const onAddPitNode = useCallback(() => {
+    addNode("PIT");
+  }, [addNode]);
+
+  const onAddBridgeNode = useCallback(() => {
+    addNode("BRIDGE");
   }, [addNode]);
 
   const onNodeClick = useCallback((_event: React.MouseEvent, node: Node) => {
@@ -226,6 +251,8 @@ function App() {
             if (node.data?.type === 'LNK') return '#00aabe';
             if (node.data?.type === 'SAT') return '#f59e0b';
             if (node.data?.type === 'REF') return '#10b981';
+            if (node.data?.type === 'PIT') return '#8b5cf6';
+            if (node.data?.type === 'BRIDGE') return '#9333ea';
             return '#94a3b8';
           }}
         />
@@ -306,6 +333,28 @@ function App() {
                     className="!bg-green-600 hover:!bg-green-700 !text-white !border-green-600"
                   >
                     Add Reference Data
+                  </Button>
+                  
+                  <Button
+                    variant="secondary"
+                    size="md"
+                    onClick={onAddPitNode}
+                    leftIcon={<Icon name="pit" size="sm" />}
+                    fullWidth
+                    className="!bg-violet-500 hover:!bg-violet-600 !text-white !border-violet-500"
+                  >
+                    Add PIT Table
+                  </Button>
+                  
+                  <Button
+                    variant="secondary"
+                    size="md"
+                    onClick={onAddBridgeNode}
+                    leftIcon={<Icon name="bridge" size="sm" />}
+                    fullWidth
+                    className="!bg-violet-600 hover:!bg-violet-700 !text-white !border-violet-600"
+                  >
+                    Add Bridge Table
                   </Button>
                 </div>
               </div>

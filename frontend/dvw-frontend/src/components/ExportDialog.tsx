@@ -44,30 +44,48 @@ const ExportDialog: React.FC<ExportDialogProps> = ({
           throw new Error('Could not find React Flow viewport element');
         }
 
-        const dataUrl = await toPng(reactFlowElement, {
-          backgroundColor: '#ffffff',
-          pixelRatio: 2, // Higher quality
-          cacheBust: true,
-          // Skip font embedding to avoid CORS issues
-          skipFonts: true,
-          // Skip external stylesheets to avoid CORS issues
-          filter: (node) => {
-            // Filter out external stylesheets and fonts
-            if (node.tagName === 'LINK' && node.getAttribute('href')?.includes('fonts.googleapis.com')) {
-              return false;
-            }
-            if (node.tagName === 'STYLE' && node.textContent?.includes('@import')) {
-              return false;
-            }
-            return true;
-          }
-        });
+        // Hide connection points during export
+        const reactFlowWrapper = document.querySelector('.react-flow') as HTMLElement;
+        const originalClassName = reactFlowWrapper?.className || '';
+        if (reactFlowWrapper) {
+          reactFlowWrapper.className = originalClassName + ' hide-handles-for-export';
+        }
 
-        // Create download link
-        const link = document.createElement('a');
-        link.download = `${currentModelName || 'data-vault-model'}.png`;
-        link.href = dataUrl;
-        link.click();
+        try {
+          const dataUrl = await toPng(reactFlowElement, {
+            backgroundColor: '#ffffff',
+            pixelRatio: 2, // Higher quality
+            cacheBust: true,
+            // Skip font embedding to avoid CORS issues
+            skipFonts: true,
+            // Skip external stylesheets to avoid CORS issues
+            filter: (node) => {
+              // Filter out external stylesheets and fonts
+              if (node.tagName === 'LINK' && node.getAttribute('href')?.includes('fonts.googleapis.com')) {
+                return false;
+              }
+              if (node.tagName === 'STYLE' && node.textContent?.includes('@import')) {
+                return false;
+              }
+              // Hide React Flow handles during export
+              if (node.nodeType === 1 && (node as Element).classList.contains('react-flow__handle')) {
+                return false;
+              }
+              return true;
+            }
+          });
+
+          // Create download link
+          const link = document.createElement('a');
+          link.download = `${currentModelName || 'data-vault-model'}.png`;
+          link.href = dataUrl;
+          link.click();
+                 } finally {
+           // Restore connection points visibility
+           if (reactFlowWrapper) {
+             reactFlowWrapper.className = originalClassName;
+           }
+         }
       } else if (selectedFormat === 'json') {
         // Export as JSON
         const exportData = {

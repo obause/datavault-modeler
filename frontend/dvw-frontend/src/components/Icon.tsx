@@ -19,6 +19,8 @@ export type IconName =
   | 'hub'
   | 'link'
   | 'satellite'
+  | 'pit'
+  | 'bridge'
   | 'edit'
   | 'close'
   | 'info'
@@ -58,6 +60,19 @@ const Icon = ({ name, size = 'md', className, ...props }: IconProps) => {
           <path d="M1180 2555 l-285 -285 424 -424 424 -424 -40 -79 c-111 -212 -163 -464 -163 -780 0 -118 3 -153 16 -171 37 -53 43 -47 464 373 l395 394 251 -249 c139 -138 262 -254 275 -259 34 -12 73 5 114 50 62 69 66 63 -227 350 l-263 257 398 399 c356 358 397 402 397 430 0 53 -22 58 -215 56 -310 -3 -535 -52 -753 -162 l-77 -40 -425 425 -425 424 -285 -285z"/>
           <path d="M612 1307 c-288 -287 -528 -530 -533 -539 -5 -10 -7 -28 -4 -41 4 -13 80 -97 169 -186 147 -145 166 -161 197 -161 32 0 69 35 561 528 290 290 528 534 529 542 8 39 -21 76 -171 223 -141 138 -164 157 -192 157 -30 0 -81 -48 -556 -523z"/>
         </g>
+      </svg>
+    ),
+    pit: (
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 20h16"/>
+      </svg>
+    ),
+    bridge: (
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l4-4 4 4m0 6l-4 4-4-4"/>
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12h18"/>
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 16h12"/>
       </svg>
     ),
     save: (

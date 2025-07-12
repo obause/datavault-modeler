@@ -7,7 +7,7 @@ import useStore from '../store/modelStore';
 
 interface DataVaultNodeData {
   label: string;
-  type: 'HUB' | 'LNK' | 'SAT' | 'REF';
+  type: 'HUB' | 'LNK' | 'SAT' | 'REF' | 'PIT' | 'BRIDGE';
   description?: string;
   properties?: {
     [key: string]: any;
@@ -28,7 +28,7 @@ const DataVaultNode = ({ id, data, selected }: DataVaultNodeProps) => {
   const [showToolbar, setShowToolbar] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   
-  const { updateNodeData, deleteNode, cloneNode } = useStore();
+  const { updateNodeData, deleteNode, cloneNode, settings } = useStore();
 
   // Auto-focus input when editing starts
   useEffect(() => {
@@ -87,8 +87,11 @@ const DataVaultNode = ({ id, data, selected }: DataVaultNodeProps) => {
   // Get reference type from node data
   const referenceType = data.properties?.referenceType || 'table';
   
+  // Check if connection points should be shown
+  const showConnectionPoints = settings?.show_connection_points ?? true;
+  
   // Get node styling based on type and properties
-  const getNodeStyle = (type: 'HUB' | 'LNK' | 'SAT' | 'REF', isTransactional: boolean = false, satType: string = 'standard', refType: string = 'table') => {
+  const getNodeStyle = (type: 'HUB' | 'LNK' | 'SAT' | 'REF' | 'PIT' | 'BRIDGE', isTransactional: boolean = false, satType: string = 'standard', refType: string = 'table') => {
     const getSatelliteTitle = (satType: string) => {
       switch (satType) {
         case 'multi-active':
@@ -144,6 +147,20 @@ const DataVaultNode = ({ id, data, selected }: DataVaultNodeProps) => {
         icon: 'archive' as const,
         title: getReferenceTitle(refType),
       },
+      PIT: {
+        background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+        border: '2px solid #8b5cf6',
+        color: 'white',
+        icon: 'pit' as const,
+        title: 'Point-in-Time',
+      },
+      BRIDGE: {
+        background: 'linear-gradient(135deg, #9333ea 0%, #7e22ce 100%)',
+        border: '2px solid #9333ea',
+        color: 'white',
+        icon: 'bridge' as const,
+        title: 'Bridge',
+      },
     };
     return styles[type];
   };
@@ -153,101 +170,205 @@ const DataVaultNode = ({ id, data, selected }: DataVaultNodeProps) => {
   return (
     <div className="relative">
       {/* Connection Handles - visible for creating connections, floating edges handle positioning */}
-      {data.type === 'SAT' && (
+      {showConnectionPoints && data.type === 'SAT' && (
         // Satellite nodes: Only one connection point (to Links)
         <Handle 
           type="target" 
           position={Position.Top} 
           id="sat-input"
-          className="w-3 h-3 !bg-orange-500 !border-2 !border-white hover:!bg-orange-400 transition-colors"
+          className="w-3 h-3 !bg-orange-500 !border-2 !border-white hover:!bg-orange-400 transition-colors hover:scale-110 !opacity-100 !z-10"
+          style={{
+            background: '#f59e0b',
+            border: '2px solid white',
+            width: '10px',
+            height: '10px',
+            opacity: 1,
+            zIndex: 10
+          }}
         />
       )}
       
-      {data.type === 'HUB' && (
+      {showConnectionPoints && data.type === 'HUB' && (
         // Hub nodes: Multiple connection points (to Links)
         <>
           <Handle 
             type="source" 
             position={Position.Top} 
             id="hub-output-top"
-            className="w-3 h-3 !bg-blue-500 !border-2 !border-white hover:!bg-blue-400 transition-colors"
+            className="w-3 h-3 !bg-blue-500 !border-2 !border-white hover:!bg-blue-400 transition-colors hover:scale-110 !opacity-100 !z-10"
+            style={{
+              background: '#3b82f6',
+              border: '2px solid white',
+              width: '10px',
+              height: '10px',
+              opacity: 1,
+              zIndex: 10
+            }}
           />
           <Handle 
             type="source" 
             position={Position.Bottom} 
             id="hub-output-bottom"
-            className="w-3 h-3 !bg-blue-500 !border-2 !border-white hover:!bg-blue-400 transition-colors"
+            className="w-3 h-3 !bg-blue-500 !border-2 !border-white hover:!bg-blue-400 transition-colors hover:scale-110 !opacity-100 !z-10"
+            style={{
+              background: '#3b82f6',
+              border: '2px solid white',
+              width: '10px',
+              height: '10px',
+              opacity: 1,
+              zIndex: 10
+            }}
           />
           <Handle 
             type="source" 
             position={Position.Left} 
             id="hub-output-left"
-            className="w-3 h-3 !bg-blue-500 !border-2 !border-white hover:!bg-blue-400 transition-colors"
+            className="w-3 h-3 !bg-blue-500 !border-2 !border-white hover:!bg-blue-400 transition-colors hover:scale-110 !opacity-100 !z-10"
+            style={{
+              background: '#3b82f6',
+              border: '2px solid white',
+              width: '10px',
+              height: '10px',
+              opacity: 1,
+              zIndex: 10
+            }}
           />
           <Handle 
             type="source" 
             position={Position.Right} 
             id="hub-output-right"
-            className="w-3 h-3 !bg-blue-500 !border-2 !border-white hover:!bg-blue-400 transition-colors"
+            className="w-3 h-3 !bg-blue-500 !border-2 !border-white hover:!bg-blue-400 transition-colors hover:scale-110 !opacity-100 !z-10"
+            style={{
+              background: '#3b82f6',
+              border: '2px solid white',
+              width: '10px',
+              height: '10px',
+              opacity: 1,
+              zIndex: 10
+            }}
           />
         </>
       )}
       
-      {data.type === 'LNK' && (
+      {showConnectionPoints && data.type === 'LNK' && (
         // Link nodes: Multiple connection points (can connect to Hubs from any side, and to Satellites)
         <>
           <Handle 
             type="target" 
             position={Position.Top} 
             id="link-input-top"
-            className="w-3 h-3 !bg-green-500 !border-2 !border-white hover:!bg-green-400 transition-colors"
+            className="w-3 h-3 !bg-green-500 !border-2 !border-white hover:!bg-green-400 transition-colors hover:scale-110 !opacity-100 !z-10"
+            style={{
+              background: '#22c55e',
+              border: '2px solid white',
+              width: '10px',
+              height: '10px',
+              opacity: 1,
+              zIndex: 10
+            }}
           />
           <Handle 
             type="target" 
             position={Position.Left} 
             id="link-input-left"
-            className="w-3 h-3 !bg-green-500 !border-2 !border-white hover:!bg-green-400 transition-colors"
+            className="w-3 h-3 !bg-green-500 !border-2 !border-white hover:!bg-green-400 transition-colors hover:scale-110 !opacity-100 !z-10"
+            style={{
+              background: '#22c55e',
+              border: '2px solid white',
+              width: '10px',
+              height: '10px',
+              opacity: 1,
+              zIndex: 10
+            }}
           />
           <Handle 
             type="target" 
             position={Position.Bottom} 
             id="link-input-bottom"
-            className="w-3 h-3 !bg-green-500 !border-2 !border-white hover:!bg-green-400 transition-colors"
+            className="w-3 h-3 !bg-green-500 !border-2 !border-white hover:!bg-green-400 transition-colors hover:scale-110 !opacity-100 !z-10"
+            style={{
+              background: '#22c55e',
+              border: '2px solid white',
+              width: '10px',
+              height: '10px',
+              opacity: 1,
+              zIndex: 10
+            }}
           />
           <Handle 
             type="target" 
             position={Position.Right} 
             id="link-input-right"
-            className="w-3 h-3 !bg-green-500 !border-2 !border-white hover:!bg-green-400 transition-colors"
+            className="w-3 h-3 !bg-green-500 !border-2 !border-white hover:!bg-green-400 transition-colors hover:scale-110 !opacity-100 !z-10"
+            style={{
+              background: '#22c55e',
+              border: '2px solid white',
+              width: '10px',
+              height: '10px',
+              opacity: 1,
+              zIndex: 10
+            }}
           />
           <Handle 
             type="source" 
             position={Position.Top} 
             id="link-output-top"
-            className="w-3 h-3 !bg-teal-500 !border-2 !border-white hover:!bg-teal-400 transition-colors"
+            className="w-3 h-3 !bg-teal-500 !border-2 !border-white hover:!bg-teal-400 transition-colors hover:scale-110 !opacity-100 !z-10"
+            style={{
+              background: '#14b8a6',
+              border: '2px solid white',
+              width: '10px',
+              height: '10px',
+              opacity: 1,
+              zIndex: 10
+            }}
           />
           <Handle 
             type="source" 
             position={Position.Left} 
             id="link-output-left"
-            className="w-3 h-3 !bg-teal-500 !border-2 !border-white hover:!bg-teal-400 transition-colors"
+            className="w-3 h-3 !bg-teal-500 !border-2 !border-white hover:!bg-teal-400 transition-colors hover:scale-110 !opacity-100 !z-10"
+            style={{
+              background: '#14b8a6',
+              border: '2px solid white',
+              width: '10px',
+              height: '10px',
+              opacity: 1,
+              zIndex: 10
+            }}
           />
           <Handle 
             type="source" 
             position={Position.Bottom} 
             id="link-output-bottom"
-            className="w-3 h-3 !bg-teal-500 !border-2 !border-white hover:!bg-teal-400 transition-colors"
+            className="w-3 h-3 !bg-teal-500 !border-2 !border-white hover:!bg-teal-400 transition-colors hover:scale-110 !opacity-100 !z-10"
+            style={{
+              background: '#14b8a6',
+              border: '2px solid white',
+              width: '10px',
+              height: '10px',
+              opacity: 1,
+              zIndex: 10
+            }}
           />
           <Handle 
             type="source" 
             position={Position.Right} 
             id="link-output-right"
-            className="w-3 h-3 !bg-teal-500 !border-2 !border-white hover:!bg-teal-400 transition-colors"
+            className="w-3 h-3 !bg-teal-500 !border-2 !border-white hover:!bg-teal-400 transition-colors hover:scale-110 !opacity-100 !z-10"
+            style={{
+              background: '#14b8a6',
+              border: '2px solid white',
+              width: '10px',
+              height: '10px',
+              opacity: 1,
+              zIndex: 10
+            }}
           />
         </>
       )}
       
-      {data.type === 'REF' && (
+      {showConnectionPoints && data.type === 'REF' && (
         // Reference nodes: Connection points depend on reference type
         <>
           {(referenceType === 'table' || referenceType === 'hub') && (
@@ -257,25 +378,57 @@ const DataVaultNode = ({ id, data, selected }: DataVaultNodeProps) => {
                 type="source" 
                 position={Position.Top} 
                 id="ref-output-top"
-                className="w-3 h-3 !bg-green-500 !border-2 !border-white hover:!bg-green-400 transition-colors"
+                className="w-3 h-3 !bg-green-500 !border-2 !border-white hover:!bg-green-400 transition-colors hover:scale-110 !opacity-100 !z-10"
+                style={{
+                  background: '#10b981',
+                  border: '2px solid white',
+                  width: '10px',
+                  height: '10px',
+                  opacity: 1,
+                  zIndex: 10
+                }}
               />
               <Handle 
                 type="source" 
                 position={Position.Bottom} 
                 id="ref-output-bottom"
-                className="w-3 h-3 !bg-green-500 !border-2 !border-white hover:!bg-green-400 transition-colors"
+                className="w-3 h-3 !bg-green-500 !border-2 !border-white hover:!bg-green-400 transition-colors hover:scale-110 !opacity-100 !z-10"
+                style={{
+                  background: '#10b981',
+                  border: '2px solid white',
+                  width: '10px',
+                  height: '10px',
+                  opacity: 1,
+                  zIndex: 10
+                }}
               />
               <Handle 
                 type="source" 
                 position={Position.Left} 
                 id="ref-output-left"
-                className="w-3 h-3 !bg-green-500 !border-2 !border-white hover:!bg-green-400 transition-colors"
+                className="w-3 h-3 !bg-green-500 !border-2 !border-white hover:!bg-green-400 transition-colors hover:scale-110 !opacity-100 !z-10"
+                style={{
+                  background: '#10b981',
+                  border: '2px solid white',
+                  width: '10px',
+                  height: '10px',
+                  opacity: 1,
+                  zIndex: 10
+                }}
               />
               <Handle 
                 type="source" 
                 position={Position.Right} 
                 id="ref-output-right"
-                className="w-3 h-3 !bg-green-500 !border-2 !border-white hover:!bg-green-400 transition-colors"
+                className="w-3 h-3 !bg-green-500 !border-2 !border-white hover:!bg-green-400 transition-colors hover:scale-110 !opacity-100 !z-10"
+                style={{
+                  background: '#10b981',
+                  border: '2px solid white',
+                  width: '10px',
+                  height: '10px',
+                  opacity: 1,
+                  zIndex: 10
+                }}
               />
             </>
           )}
@@ -285,9 +438,127 @@ const DataVaultNode = ({ id, data, selected }: DataVaultNodeProps) => {
               type="target" 
               position={Position.Top} 
               id="ref-sat-input"
-              className="w-3 h-3 !bg-green-500 !border-2 !border-white hover:!bg-green-400 transition-colors"
+              className="w-3 h-3 !bg-green-500 !border-2 !border-white hover:!bg-green-400 transition-colors hover:scale-110 !opacity-100 !z-10"
+              style={{
+                background: '#10b981',
+                border: '2px solid white',
+                width: '10px',
+                height: '10px',
+                opacity: 1,
+                zIndex: 10
+              }}
             />
           )}
+        </>
+      )}
+      
+      {showConnectionPoints && data.type === 'PIT' && (
+        // PIT nodes: Target handles (connected to hubs/links they track)
+        <>
+          <Handle 
+            type="target" 
+            position={Position.Top} 
+            id="pit-input-top"
+            className="w-3 h-3 !bg-violet-500 !border-2 !border-white hover:!bg-violet-400 transition-colors hover:scale-110 !opacity-100 !z-10"
+            style={{
+              background: '#8b5cf6',
+              border: '2px solid white',
+              width: '10px',
+              height: '10px',
+              opacity: 1,
+              zIndex: 10
+            }}
+          />
+          <Handle 
+            type="target" 
+            position={Position.Left} 
+            id="pit-input-left"
+            className="w-3 h-3 !bg-violet-500 !border-2 !border-white hover:!bg-violet-400 transition-colors hover:scale-110 !opacity-100 !z-10"
+            style={{
+              background: '#8b5cf6',
+              border: '2px solid white',
+              width: '10px',
+              height: '10px',
+              opacity: 1,
+              zIndex: 10
+            }}
+          />
+          <Handle 
+            type="target" 
+            position={Position.Right} 
+            id="pit-input-right"
+            className="w-3 h-3 !bg-violet-500 !border-2 !border-white hover:!bg-violet-400 transition-colors hover:scale-110 !opacity-100 !z-10"
+            style={{
+              background: '#8b5cf6',
+              border: '2px solid white',
+              width: '10px',
+              height: '10px',
+              opacity: 1,
+              zIndex: 10
+            }}
+          />
+        </>
+      )}
+
+      {showConnectionPoints && data.type === 'BRIDGE' && (
+        // Bridge nodes: Target handles (connected to nodes they bridge)
+        <>
+          <Handle 
+            type="target" 
+            position={Position.Top} 
+            id="bridge-input-top"
+            className="w-3 h-3 !bg-violet-600 !border-2 !border-white hover:!bg-violet-500 transition-colors hover:scale-110 !opacity-100 !z-10"
+            style={{
+              background: '#9333ea',
+              border: '2px solid white',
+              width: '10px',
+              height: '10px',
+              opacity: 1,
+              zIndex: 10
+            }}
+          />
+          <Handle 
+            type="target" 
+            position={Position.Left} 
+            id="bridge-input-left"
+            className="w-3 h-3 !bg-violet-600 !border-2 !border-white hover:!bg-violet-500 transition-colors hover:scale-110 !opacity-100 !z-10"
+            style={{
+              background: '#9333ea',
+              border: '2px solid white',
+              width: '10px',
+              height: '10px',
+              opacity: 1,
+              zIndex: 10
+            }}
+          />
+          <Handle 
+            type="target" 
+            position={Position.Right} 
+            id="bridge-input-right"
+            className="w-3 h-3 !bg-violet-600 !border-2 !border-white hover:!bg-violet-500 transition-colors hover:scale-110 !opacity-100 !z-10"
+            style={{
+              background: '#9333ea',
+              border: '2px solid white',
+              width: '10px',
+              height: '10px',
+              opacity: 1,
+              zIndex: 10
+            }}
+          />
+          <Handle 
+            type="target" 
+            position={Position.Bottom} 
+            id="bridge-input-bottom"
+            className="w-3 h-3 !bg-violet-600 !border-2 !border-white hover:!bg-violet-500 transition-colors hover:scale-110 !opacity-100 !z-10"
+            style={{
+              background: '#9333ea',
+              border: '2px solid white',
+              width: '10px',
+              height: '10px',
+              opacity: 1,
+              zIndex: 10
+            }}
+          />
         </>
       )}
 

@@ -42,6 +42,7 @@ const Settings: React.FC<SettingsProps> = ({ isOpen, onClose }) => {
         edge_type: settings.edge_type,
         floating_edges: settings.floating_edges,
         edge_animation: settings.edge_animation,
+        show_connection_points: settings.show_connection_points,
       });
       setIsDirty(false);
     }
@@ -78,6 +79,7 @@ const Settings: React.FC<SettingsProps> = ({ isOpen, onClose }) => {
         edge_type: settings.edge_type,
         floating_edges: settings.floating_edges,
         edge_animation: settings.edge_animation,
+        show_connection_points: settings.show_connection_points,
       });
       setIsDirty(false);
     }
@@ -208,6 +210,19 @@ const Settings: React.FC<SettingsProps> = ({ isOpen, onClose }) => {
                       onChange={(e) => handleInputChange('grid_size', parseInt(e.target.value))}
                       className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     />
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      id="show_connection_points"
+                      checked={formData.show_connection_points ?? true}
+                      onChange={(e) => handleInputChange('show_connection_points', e.target.checked)}
+                      className="w-4 h-4 text-primary-600 border-surface-300 rounded focus:ring-primary-500"
+                    />
+                    <label htmlFor="show_connection_points" className="text-sm font-medium text-surface-700">
+                      Show connection points
+                    </label>
                   </div>
                 </div>
               </div>

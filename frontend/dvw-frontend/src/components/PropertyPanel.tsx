@@ -292,6 +292,48 @@ export const defaultNodeProperties: NodeTypeProperties = {
         value: 'satellite'
       }
     }
+  ],
+  PIT: [
+    ...baseProperties,
+    {
+      key: 'trackedEntity',
+      label: 'Tracked Entity',
+      type: 'readonly-list',
+      value: [],
+      description: 'Hub or Link that this PIT table tracks (automatically determined)'
+    },
+    {
+      key: 'relatedSatellites',
+      label: 'Related Satellites',
+      type: 'readonly-list',
+      value: [],
+      description: 'All satellites of the tracked hub/link (automatically determined)'
+    },
+    {
+      key: 'dimensionKeyName',
+      label: 'Dimension Key Name',
+      type: 'text',
+      value: '',
+      placeholder: 'e.g., pit_customer_dimension_key',
+      description: 'Name of the dimension key column in the PIT table'
+    },
+    {
+      key: 'logarithmicPIT',
+      label: 'Logarithmic PIT',
+      type: 'boolean',
+      value: false,
+      description: 'Whether this PIT table uses logarithmic approach for optimization'
+    }
+  ],
+  BRIDGE: [
+    ...baseProperties,
+    {
+      key: 'relatedNodes',
+      label: 'Related Nodes',
+      type: 'readonly-list',
+      value: [],
+      description: 'Nodes that this bridge table connects (automatically determined)'
+    }
   ]
 };
 
@@ -322,7 +364,7 @@ const PropertyPanel: React.FC<PropertyPanelProps> = ({
     return null;
   }
 
-  const nodeType = nodeData.type as 'HUB' | 'LNK' | 'SAT' | 'REF';
+  const nodeType = nodeData.type as 'HUB' | 'LNK' | 'SAT' | 'REF' | 'PIT' | 'BRIDGE';
   
   // Calculate related nodes dynamically
   const getRelatedNodes = () => {
@@ -343,11 +385,13 @@ const PropertyPanel: React.FC<PropertyPanelProps> = ({
     const relatedLinks = connectedNodes.filter(node => node.data.type === 'LNK');
     const relatedSatellites = connectedNodes.filter(node => node.data.type === 'SAT');
     const relatedReference = connectedNodes.filter(node => node.data.type === 'REF');
+    const relatedPIT = connectedNodes.filter(node => node.data.type === 'PIT');
+    const relatedBridge = connectedNodes.filter(node => node.data.type === 'BRIDGE');
 
-    return { relatedHubs, relatedLinks, relatedSatellites, relatedReference };
+    return { relatedHubs, relatedLinks, relatedSatellites, relatedReference, relatedPIT, relatedBridge };
   };
 
-  const { relatedHubs, relatedLinks, relatedSatellites, relatedReference } = getRelatedNodes();
+  const { relatedHubs, relatedLinks, relatedSatellites, relatedReference, relatedPIT, relatedBridge } = getRelatedNodes();
 
   // Update properties with calculated relationships
   const properties = defaultNodeProperties[nodeType]?.map(prop => {
@@ -356,15 +400,36 @@ const PropertyPanel: React.FC<PropertyPanelProps> = ({
     } else if (prop.key === 'relatedLinks') {
       return { ...prop, value: relatedLinks.map(n => n.data.label) };
     } else if (prop.key === 'relatedSatellites') {
-      return { ...prop, value: relatedSatellites.map(n => n.data.label) };
+      if (nodeType === 'PIT') {
+        // For PIT tables, show satellites connected to the tracked hub/link
+        const trackedNode = [...relatedHubs, ...relatedLinks][0];
+        if (trackedNode) {
+          // Find all satellites connected to the tracked hub/link
+          const trackedNodeSatellites = allNodes.filter(node => {
+            if (node.data.type !== 'SAT') return false;
+            return allEdges.some(edge => 
+              (edge.source === trackedNode.id && edge.target === node.id) ||
+              (edge.target === trackedNode.id && edge.source === node.id)
+            );
+          });
+          return { ...prop, value: trackedNodeSatellites.map(n => n.data.label) };
+        }
+        return { ...prop, value: [] };
+      } else {
+        return { ...prop, value: relatedSatellites.map(n => n.data.label) };
+      }
     } else if (prop.key === 'relatedHub') {
       // For satellites, show the hub or link it's connected to
       const parentNode = [...relatedHubs, ...relatedLinks][0];
       return { ...prop, value: parentNode ? [parentNode.data.label] : [] };
     } else if (prop.key === 'relatedNodes') {
-      // For reference data, show all connected nodes
-      const allRelatedNodes = [...relatedHubs, ...relatedLinks, ...relatedSatellites, ...relatedReference];
+      // For reference data and bridge tables, show all connected nodes
+      const allRelatedNodes = [...relatedHubs, ...relatedLinks, ...relatedSatellites, ...relatedReference, ...relatedPIT, ...relatedBridge];
       return { ...prop, value: allRelatedNodes.map(n => n.data.label) };
+    } else if (prop.key === 'trackedEntity') {
+      // For PIT tables, show the hub or link they track
+      const trackedNode = [...relatedHubs, ...relatedLinks][0];
+      return { ...prop, value: trackedNode ? [trackedNode.data.label] : [] };
     }
     return prop;
   }) || [];

@@ -42,6 +42,7 @@ export interface Settings {
   edge_type: 'bezier' | 'straight' | 'step' | 'smoothstep';
   floating_edges: boolean;
   edge_animation: boolean;
+  show_connection_points: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -55,6 +56,7 @@ export interface UpdateSettings {
   edge_type?: 'bezier' | 'straight' | 'step' | 'smoothstep';
   floating_edges?: boolean;
   edge_animation?: boolean;
+  show_connection_points?: boolean;
 }
 
 // Types for creating nodes/edges (without model field)

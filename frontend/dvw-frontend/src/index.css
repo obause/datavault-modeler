@@ -59,3 +59,8 @@ body {
   min-height: 100vh;
   font-family: var(--font-family-sans);
 }
+
+/* Hide connection handles during export */
+.hide-handles-for-export .react-flow__handle {
+  display: none !important;
+}

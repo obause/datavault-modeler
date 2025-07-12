@@ -53,6 +53,7 @@ class Settings(models.Model):
     ])
     floating_edges = models.BooleanField(default=True)
     edge_animation = models.BooleanField(default=True)
+    show_connection_points = models.BooleanField(default=True)
     
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
@@ -91,6 +92,7 @@ class Settings(models.Model):
                 'edge_type': 'smoothstep',
                 'floating_edges': True,
                 'edge_animation': True,
+                'show_connection_points': True,
             }
         )
         return obj
