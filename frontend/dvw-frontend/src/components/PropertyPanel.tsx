@@ -160,6 +160,20 @@ export const defaultNodeProperties: NodeTypeProperties = {
   SAT: [
     ...baseProperties,
     {
+      key: 'satelliteType',
+      label: 'Satellite Type',
+      type: 'select',
+      value: 'standard',
+      options: [
+        { value: 'standard', label: 'Standard Satellite' },
+        { value: 'multi-active', label: 'Multi-Active Satellite' },
+        { value: 'effectivity', label: 'Effectivity Satellite' },
+        { value: 'record-tracking', label: 'Record-Tracking Satellite' },
+        { value: 'non-historized', label: 'Non-Historized Satellite' }
+      ],
+      description: 'Type of satellite functionality'
+    },
+    {
       key: 'relatedHub',
       label: 'Related Hub',
       type: 'readonly-list',
@@ -180,7 +194,31 @@ export const defaultNodeProperties: NodeTypeProperties = {
       type: 'text',
       value: '',
       placeholder: 'e.g., sat_customer_hashdiff',
-      description: 'Name of the hashdiff column'
+      description: 'Name of the hashdiff column (not applicable for non-historized satellites)'
+    },
+    {
+      key: 'multiActiveKey',
+      label: 'Multi-Active Key',
+      type: 'text',
+      value: '',
+      placeholder: 'e.g., ma_customer_product_key',
+      description: 'Key for multi-active satellite pattern',
+      conditional: {
+        dependsOn: 'satelliteType',
+        value: 'multi-active'
+      }
+    },
+    {
+      key: 'trackedColumn',
+      label: 'Tracked Column',
+      type: 'text',
+      value: '',
+      placeholder: 'e.g., deleted_flag',
+      description: 'Name of the column inside the source that should be tracked for deletes',
+      conditional: {
+        dependsOn: 'satelliteType',
+        value: ['effectivity', 'record-tracking']
+      }
     },
     {
       key: 'attributes',
@@ -574,7 +612,13 @@ const PropertyPanel: React.FC<PropertyPanelProps> = ({
                if (property.conditional) {
                  const dependentValue = nodeData.properties?.[property.conditional.dependsOn] ?? 
                    properties.find(p => p.key === property.conditional?.dependsOn)?.value;
-                 if (dependentValue !== property.conditional?.value) {
+                 
+                 // Handle array of values for conditional rendering
+                 if (Array.isArray(property.conditional.value)) {
+                   if (!property.conditional.value.includes(dependentValue)) {
+                     return null;
+                   }
+                 } else if (dependentValue !== property.conditional.value) {
                    return null;
                  }
                }

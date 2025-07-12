@@ -149,6 +149,7 @@ function App() {
       data: { 
         label: `${type} ${Date.now() % 1000}`,
         type: type,
+        properties: type === 'SAT' ? { satelliteType: 'standard' } : {},
       },
     };
     addNodeToStore(newNode);

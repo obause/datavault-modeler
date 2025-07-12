@@ -12,6 +12,7 @@ interface DataVaultNodeData {
   properties?: {
     [key: string]: any;
   };
+  satelliteType?: 'standard' | 'multi-active' | 'effectivity' | 'record-tracking' | 'non-historized';
 }
 
 interface DataVaultNodeProps {
@@ -79,8 +80,26 @@ const DataVaultNode = ({ id, data, selected }: DataVaultNodeProps) => {
   // Get hashkey property if available
   const hashkeyName = data.properties?.hashkeyName || data.properties?.hashdiffName;
 
+  // Get satellite type from node data
+  const satelliteType = data.properties?.satelliteType || 'standard';
+  
   // Get node styling based on type and properties
-  const getNodeStyle = (type: 'HUB' | 'LNK' | 'SAT', isTransactional: boolean = false) => {
+  const getNodeStyle = (type: 'HUB' | 'LNK' | 'SAT', isTransactional: boolean = false, satType: string = 'standard') => {
+    const getSatelliteTitle = (satType: string) => {
+      switch (satType) {
+        case 'multi-active':
+          return 'Multi-Active Satellite';
+        case 'effectivity':
+          return 'Effectivity Satellite';
+        case 'record-tracking':
+          return 'Record-Tracking Satellite';
+        case 'non-historized':
+          return 'Non-Historized Satellite';
+        default:
+          return 'Satellite';
+      }
+    };
+    
     const styles = {
       HUB: {
         background: 'linear-gradient(135deg, #2d2382 0%, #1a1850 100%)',
@@ -101,13 +120,13 @@ const DataVaultNode = ({ id, data, selected }: DataVaultNodeProps) => {
         border: '2px solid #f59e0b',
         color: 'white',
         icon: 'satellite' as const,
-        title: 'Satellite',
+        title: getSatelliteTitle(satType),
       },
     };
     return styles[type];
   };
 
-  const nodeStyle = getNodeStyle(data.type, isTransactionalLink);
+  const nodeStyle = getNodeStyle(data.type, isTransactionalLink, satelliteType);
 
   return (
     <div className="relative">
@@ -228,6 +247,17 @@ const DataVaultNode = ({ id, data, selected }: DataVaultNodeProps) => {
             {isTransactionalLink && (
               <div className="absolute -top-1 -right-1 w-4 h-4 bg-white/90 rounded-full flex items-center justify-center">
                 <span className="text-xs font-bold text-gray-800">T</span>
+              </div>
+            )}
+            {/* Satellite Type Indicators */}
+            {data.type === 'SAT' && satelliteType !== 'standard' && (
+              <div className="absolute -top-1 -right-1 w-6 h-4 bg-white/90 rounded-full flex items-center justify-center">
+                <span className="text-xs font-bold text-gray-800">
+                  {satelliteType === 'multi-active' && 'MA'}
+                  {satelliteType === 'effectivity' && 'E'}
+                  {satelliteType === 'record-tracking' && 'RTS'}
+                  {satelliteType === 'non-historized' && 'NH'}
+                </span>
               </div>
             )}
           </div>
