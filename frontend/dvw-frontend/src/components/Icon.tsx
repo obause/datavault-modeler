@@ -63,16 +63,16 @@ const Icon = ({ name, size = 'md', className, ...props }: IconProps) => {
       </svg>
     ),
     pit: (
-      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 20h16"/>
+      <svg fill="currentColor" viewBox="0 0 512 512" stroke="none">
+        <g transform="translate(0,512) scale(0.1,-0.1)">
+          <path d="M2230 5104 c-463 -63 -909 -256 -1275 -551 -126 -101 -338 -320 -431 -444 -283 -376 -448 -780 -510 -1249 -23 -179 -15 -546 16 -719 30 -172 80 -347 144 -508 30 -76 54 -138 53 -139 -212 -113 -220 -120 -225 -207 -4 -82 10 -104 131 -195 256 -193 458 -286 737 -338 198 -37 267 -40 308 -15 43 28 72 77 72 124 0 21 -36 150 -79 285 -44 136 -100 316 -125 400 -25 85 -54 167 -63 183 -34 57 -125 82 -194 54 -13 -5 -23 13 -51 87 -91 237 -118 375 -125 633 -6 218 5 327 52 515 135 541 499 1004 996 1269 439 233 954 286 1435 147 675 -195 1215 -768 1369 -1453 47 -211 59 -498 29 -702 -111 -757 -644 -1372 -1384 -1594 -149 -45 -271 -66 -453 -77 -242 -15 -247 -22 -247 -311 0 -224 3 -239 66 -280 59 -39 375 -20 639 37 742 160 1389 663 1735 1349 189 372 270 718 270 1145 0 392 -68 710 -227 1065 -74 164 -211 388 -331 540 -80 100 -261 284 -372 377 -372 313 -868 525 -1355 578 -129 14 -481 10 -605 -6z"/>
+          <path d="M2275 4201 c-676 -121 -1199 -625 -1344 -1295 -53 -244 -43 -547 25 -781 14 -48 17 -51 82 -80 84 -37 178 -127 214 -205 14 -30 54 -151 89 -269 l63 -214 76 -64 c206 -177 461 -301 747 -365 134 -30 510 -33 643 -5 342 72 608 211 849 442 244 234 398 513 472 853 30 139 37 435 15 590 -52 354 -213 671 -470 928 -255 255 -573 417 -919 468 -144 22 -411 20 -542 -3z m357 -628 c16 -10 39 -34 51 -53 22 -34 22 -43 25 -475 l3 -440 283 -285 c156 -157 289 -295 295 -307 31 -60 1 -157 -58 -188 -38 -19 -103 -19 -139 -1 -48 26 -660 648 -669 681 -4 17 -8 244 -8 505 0 466 0 476 21 508 44 69 130 93 196 55z"/>
+        </g>
       </svg>
     ),
     bridge: (
-      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l4-4 4 4m0 6l-4 4-4-4"/>
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12h18"/>
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 16h12"/>
+      <svg fill="currentColor" viewBox="0 0 196 111">
+        <path d="m16,96V9h164V96h-20q 1-72-62-68-63-4-62,68"/>
       </svg>
     ),
     save: (
@@ -148,7 +148,11 @@ const Icon = ({ name, size = 'md', className, ...props }: IconProps) => {
     ),
     folder: (
       <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12l2-2m0 0l7-7 7 7M5 12H9"/>
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V9c0-1.1-.9-2-2-2h-5.5L10 5H6c-1.1 0-2 .9-2 2z"/>
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 13h6m-3-3v6"/>
+        <circle cx="7" cy="11" r="1" fill="currentColor"/>
+        <circle cx="17" cy="11" r="1" fill="currentColor"/>
+        <circle cx="12" cy="15" r="1" fill="currentColor"/>
       </svg>
     ),
     close: (
