@@ -1,7 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { toPng } from 'html-to-image';
-import { getViewportForBounds } from '@xyflow/react';
-import type { Node } from '@xyflow/react';
+import type { Node, Edge } from '@xyflow/react';
 import Button from './Button';
 import Card from './Card';
 import Icon from './Icon';
@@ -10,15 +9,17 @@ interface ExportDialogProps {
   isOpen: boolean;
   onClose: () => void;
   nodes: Node[];
+  edges: Edge[];
   currentModelName: string;
 }
 
-type ExportFormat = 'png';
+type ExportFormat = 'png' | 'json' | 'svg' | 'dbml' | 'dbt';
 
 const ExportDialog: React.FC<ExportDialogProps> = ({ 
   isOpen, 
   onClose, 
   nodes, 
+  edges,
   currentModelName 
 }) => {
   const [selectedFormat, setSelectedFormat] = useState<ExportFormat>('png');
@@ -35,15 +36,14 @@ const ExportDialog: React.FC<ExportDialogProps> = ({
     setExportError(null);
 
     try {
-      // Get the React Flow viewport element
-      const reactFlowElement = document.querySelector('.react-flow__viewport') as HTMLElement;
-      
-      if (!reactFlowElement) {
-        throw new Error('Could not find React Flow viewport element');
-      }
-
-      // Export based on selected format
       if (selectedFormat === 'png') {
+        // Get the React Flow viewport element
+        const reactFlowElement = document.querySelector('.react-flow__viewport') as HTMLElement;
+        
+        if (!reactFlowElement) {
+          throw new Error('Could not find React Flow viewport element');
+        }
+
         const dataUrl = await toPng(reactFlowElement, {
           backgroundColor: '#ffffff',
           pixelRatio: 2, // Higher quality
@@ -68,6 +68,42 @@ const ExportDialog: React.FC<ExportDialogProps> = ({
         link.download = `${currentModelName || 'data-vault-model'}.png`;
         link.href = dataUrl;
         link.click();
+      } else if (selectedFormat === 'json') {
+        // Export as JSON
+        const exportData = {
+          name: currentModelName || 'Untitled Model',
+          version: '1.0',
+          exportedAt: new Date().toISOString(),
+          nodes: nodes.map(node => ({
+            id: node.id,
+            type: node.data.type,
+            position: node.position,
+            data: node.data
+          })),
+          edges: edges.map(edge => ({
+            id: edge.id,
+            source: edge.source,
+            target: edge.target,
+            sourceHandle: edge.sourceHandle,
+            targetHandle: edge.targetHandle,
+            type: edge.type,
+            style: edge.style,
+            animated: edge.animated,
+            data: edge.data
+          }))
+        };
+
+        const jsonString = JSON.stringify(exportData, null, 2);
+        const blob = new Blob([jsonString], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        
+        const link = document.createElement('a');
+        link.download = `${currentModelName || 'data-vault-model'}.json`;
+        link.href = url;
+        link.click();
+        
+        // Clean up the URL object
+        URL.revokeObjectURL(url);
       }
 
       onClose();
@@ -77,13 +113,14 @@ const ExportDialog: React.FC<ExportDialogProps> = ({
     } finally {
       setIsExporting(false);
     }
-  }, [nodes, selectedFormat, currentModelName, onClose]);
+  }, [nodes, edges, selectedFormat, currentModelName, onClose]);
 
   const formatOptions = [
-    { value: 'png' as const, label: 'PNG Image', description: 'High quality raster image' },
-    // Future formats can be added here
-    // { value: 'svg' as const, label: 'SVG Vector', description: 'Scalable vector graphics' },
-    // { value: 'pdf' as const, label: 'PDF Document', description: 'Portable document format' },
+    { value: 'png' as const, label: 'PNG Image', description: 'High quality raster image', disabled: false },
+    { value: 'json' as const, label: 'JSON File', description: 'Model data for import/backup', disabled: false },
+    { value: 'svg' as const, label: 'SVG Vector', description: 'Scalable vector graphics', disabled: true },
+    { value: 'dbml' as const, label: 'DBML Schema', description: 'Database Markup Language', disabled: true },
+    { value: 'dbt' as const, label: 'dbt Models', description: 'Data Vault 4 dbt templates', disabled: true },
   ];
 
   if (!isOpen) return null;
@@ -132,10 +169,12 @@ const ExportDialog: React.FC<ExportDialogProps> = ({
               {formatOptions.map((format) => (
                 <label
                   key={format.value}
-                  className={`flex items-center p-3 border rounded-lg cursor-pointer transition-colors ${
-                    selectedFormat === format.value
-                      ? 'border-primary-500 bg-primary-50'
-                      : 'border-surface-300 hover:border-surface-400'
+                  className={`flex items-center p-3 border rounded-lg transition-colors ${
+                    format.disabled
+                      ? 'border-surface-200 bg-surface-50 cursor-not-allowed opacity-60'
+                      : selectedFormat === format.value
+                      ? 'border-primary-500 bg-primary-50 cursor-pointer'
+                      : 'border-surface-300 hover:border-surface-400 cursor-pointer'
                   }`}
                 >
                   <input
@@ -143,19 +182,27 @@ const ExportDialog: React.FC<ExportDialogProps> = ({
                     name="exportFormat"
                     value={format.value}
                     checked={selectedFormat === format.value}
-                    onChange={(e) => setSelectedFormat(e.target.value as ExportFormat)}
+                    onChange={(e) => !format.disabled && setSelectedFormat(e.target.value as ExportFormat)}
+                    disabled={format.disabled}
                     className="sr-only"
                   />
                   <div className="flex-1">
-                    <div className="font-medium text-surface-900">{format.label}</div>
-                    <div className="text-sm text-surface-600">{format.description}</div>
+                    <div className={`font-medium ${format.disabled ? 'text-surface-500' : 'text-surface-900'}`}>
+                      {format.label}
+                      {format.disabled && <span className="ml-2 text-xs text-surface-400">(Coming Soon)</span>}
+                    </div>
+                    <div className={`text-sm ${format.disabled ? 'text-surface-400' : 'text-surface-600'}`}>
+                      {format.description}
+                    </div>
                   </div>
                   <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                    selectedFormat === format.value
+                    format.disabled
+                      ? 'border-surface-300 bg-surface-100'
+                      : selectedFormat === format.value
                       ? 'border-primary-500 bg-primary-500'
                       : 'border-surface-300'
                   }`}>
-                    {selectedFormat === format.value && (
+                    {selectedFormat === format.value && !format.disabled && (
                       <div className="w-2 h-2 bg-white rounded-full" />
                     )}
                   </div>
@@ -170,6 +217,7 @@ const ExportDialog: React.FC<ExportDialogProps> = ({
             <div className="text-sm text-surface-600 space-y-1">
               <div>Name: {currentModelName || 'Untitled Model'}</div>
               <div>Nodes: {nodes.length}</div>
+              <div>Edges: {edges.length}</div>
             </div>
           </div>
 
@@ -188,7 +236,7 @@ const ExportDialog: React.FC<ExportDialogProps> = ({
               variant="primary"
               size="md"
               onClick={handleExport}
-              disabled={isExporting || nodes.length === 0}
+              disabled={isExporting || nodes.length === 0 || formatOptions.find(f => f.value === selectedFormat)?.disabled}
               isLoading={isExporting}
               leftIcon={<Icon name="download" size="sm" />}
               className="flex-1"

@@ -21,6 +21,7 @@ import PropertyPanel from './components/PropertyPanel';
 import Settings from './components/Settings';
 import NotificationContainer from './components/NotificationContainer';
 import ExportDialog from './components/ExportDialog';
+import ImportDialog from './components/ImportDialog';
 import SplashScreen from './components/SplashScreen';
 import AboutDialog from './components/AboutDialog';
 import { snapToGrid } from './utils/snapToGrid';
@@ -61,10 +62,14 @@ function App() {
     settings,
     loadSettings,
     updateEdgeTypes,
+    importModel,
   } = useStore();
 
   // Export dialog state
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
+  
+  // Import dialog state
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
   
   // About dialog state
   const [aboutDialogOpen, setAboutDialogOpen] = useState(false);
@@ -167,6 +172,10 @@ function App() {
     const { openPropertyPanel } = useStore.getState();
     openPropertyPanel(node.id);
   }, []);
+
+  const handleImport = useCallback((importedNodes: Node[], importedEdges: Edge[], modelName: string) => {
+    importModel(importedNodes, importedEdges, modelName);
+  }, [importModel]);
 
   // Get snap to grid settings
   const snapToGridEnabled = settings?.snap_to_grid || false;
@@ -289,8 +298,8 @@ function App() {
                 <ModelManager />
               </div>
 
-              {/* Export */}
-              <div className="pt-3 border-t border-surface-200">
+              {/* Export/Import */}
+              <div className="pt-3 border-t border-surface-200 space-y-2">
                 <Button
                   variant="secondary"
                   size="md"
@@ -299,6 +308,16 @@ function App() {
                   fullWidth
                 >
                   Export Model
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  size="md"
+                  onClick={() => setImportDialogOpen(true)}
+                  leftIcon={<Icon name="upload" size="sm" />}
+                  fullWidth
+                >
+                  Import Model
                 </Button>
               </div>
 
@@ -371,7 +390,15 @@ function App() {
         isOpen={exportDialogOpen}
         onClose={() => setExportDialogOpen(false)}
         nodes={nodes}
+        edges={edges}
         currentModelName={currentModelName}
+      />
+      
+      {/* Import Dialog */}
+      <ImportDialog
+        isOpen={importDialogOpen}
+        onClose={() => setImportDialogOpen(false)}
+        onImport={handleImport}
       />
       
       {/* About Dialog */}

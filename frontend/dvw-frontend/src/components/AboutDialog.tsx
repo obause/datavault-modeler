@@ -89,7 +89,7 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ isOpen, onClose }) => {
                   </div>
                   <div>
                     <p className="font-medium text-surface-900">Ole Bause</p>
-                    <p className="text-sm text-surface-600">BI Consultant @ Scalefree International GmbH</p>
+                    <p className="text-sm text-surface-600">BI Consultant @ Scalefree</p>
                   </div>
                 </div>
                 
@@ -120,7 +120,7 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ isOpen, onClose }) => {
               onClick={handleEasterEggClick}
             >
               <p className="text-xs text-surface-400 hover:text-surface-600 transition-colors">
-                Click me {clickCount > 0 ? `${5 - clickCount} more times` : '5 times'} for a surprise!
+                Click me {clickCount > 0 ? `${5 - clickCount} more times` : '5 times'}
               </p>
             </div>
           </div>

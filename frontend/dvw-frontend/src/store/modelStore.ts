@@ -112,6 +112,8 @@ interface ModelState {
   markUnsavedChanges: () => void;
   // Edge update actions
   updateEdgeTypes: () => void;
+  // Import actions
+  importModel: (nodes: Node[], edges: Edge[], modelName: string) => void;
 }
 
 // Transform API node to React Flow format
@@ -714,6 +716,42 @@ const useStore = create<ModelState>((set, get) => ({
       currentModelId: state.currentModelId,
       currentModelName: state.currentModelName,
     });
+  },
+  
+  // Import actions
+  importModel: (nodes, edges, modelName) => {
+    const state = get();
+    
+    // Stop auto-save during import
+    state.stopAutoSave();
+    
+    // Update the model state with imported data
+    const newState = {
+      nodes,
+      edges,
+      currentModelId: null, // Reset model ID since this is a new import
+      currentModelName: modelName,
+      hasUnsavedChanges: true, // Mark as having unsaved changes
+      error: null,
+    };
+    
+    set(newState);
+    
+    // Persist the imported model
+    persistModelState({
+      nodes,
+      edges,
+      currentModelId: null,
+      currentModelName: modelName,
+    });
+    
+    // Restart auto-save
+    state.startAutoSave();
+    
+    // Show success notification
+    showNotification.success("Model Imported", `"${modelName}" has been imported successfully`);
+    
+    console.log(`Model "${modelName}" imported with ${nodes.length} nodes and ${edges.length} edges`);
   },
 }));
 
