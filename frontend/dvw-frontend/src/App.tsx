@@ -32,9 +32,11 @@ const nodeTypes = {
   satellite: DataVaultNode,
   lnk: DataVaultNode,
   sat: DataVaultNode,
+  ref: DataVaultNode,
   HUB: DataVaultNode,
   LNK: DataVaultNode,
   SAT: DataVaultNode,
+  REF: DataVaultNode,
   default: DataVaultNode,
 };
 
@@ -134,7 +136,7 @@ function App() {
     [updateEdges, edges, nodes, settings]
   );
 
-  const addNode = useCallback((type: 'HUB' | 'LNK' | 'SAT') => {
+  const addNode = useCallback((type: 'HUB' | 'LNK' | 'SAT' | 'REF') => {
     const basePosition = { x: Math.random() * 500, y: Math.random() * 300 };
     
     // Apply snap to grid if enabled
@@ -149,7 +151,8 @@ function App() {
       data: { 
         label: `${type} ${Date.now() % 1000}`,
         type: type,
-        properties: type === 'SAT' ? { satelliteType: 'standard' } : {},
+        properties: type === 'SAT' ? { satelliteType: 'standard' } : 
+                     type === 'REF' ? { referenceType: 'table' } : {},
       },
     };
     addNodeToStore(newNode);
@@ -165,6 +168,10 @@ function App() {
 
   const onAddSatelliteNode = useCallback(() => {
     addNode("SAT");
+  }, [addNode]);
+
+  const onAddReferenceNode = useCallback(() => {
+    addNode("REF");
   }, [addNode]);
 
   const onNodeClick = useCallback((_event: React.MouseEvent, node: Node) => {
@@ -218,6 +225,7 @@ function App() {
             if (node.data?.type === 'HUB') return '#2d2382';
             if (node.data?.type === 'LNK') return '#00aabe';
             if (node.data?.type === 'SAT') return '#f59e0b';
+            if (node.data?.type === 'REF') return '#10b981';
             return '#94a3b8';
           }}
         />
@@ -287,6 +295,17 @@ function App() {
                     fullWidth
                   >
                     Add Satellite
+                  </Button>
+                  
+                  <Button
+                    variant="secondary"
+                    size="md"
+                    onClick={onAddReferenceNode}
+                    leftIcon={<Icon name="archive" size="sm" />}
+                    fullWidth
+                    className="!bg-green-600 hover:!bg-green-700 !text-white !border-green-600"
+                  >
+                    Add Reference Data
                   </Button>
                 </div>
               </div>

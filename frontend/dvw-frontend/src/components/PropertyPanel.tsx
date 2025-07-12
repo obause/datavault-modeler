@@ -235,6 +235,63 @@ export const defaultNodeProperties: NodeTypeProperties = {
       value: false,
       description: 'Whether this satellite contains personally identifiable information'
     }
+  ],
+  REF: [
+    ...baseProperties,
+    {
+      key: 'referenceType',
+      label: 'Reference Type',
+      type: 'select',
+      value: 'table',
+      options: [
+        { value: 'table', label: 'Reference Table' },
+        { value: 'hub', label: 'Reference Hub' },
+        { value: 'satellite', label: 'Reference Satellite' }
+      ],
+      description: 'Type of reference data functionality'
+    },
+    {
+      key: 'relatedNodes',
+      label: 'Related Nodes',
+      type: 'readonly-list',
+      value: [],
+      description: 'Nodes connected to this reference data'
+    },
+    {
+      key: 'recordSource',
+      label: 'Record Source',
+      type: 'select',
+      value: '',
+      options: recordSourceOptions,
+      description: 'Source system providing reference data',
+      conditional: {
+        dependsOn: 'referenceType',
+        value: ['table', 'hub']
+      }
+    },
+    {
+      key: 'referenceKeys',
+      label: 'Reference Keys',
+      type: 'list',
+      value: [],
+      placeholder: 'Add reference key',
+      description: 'Key columns for reference data lookup',
+      conditional: {
+        dependsOn: 'referenceType',
+        value: ['table', 'hub']
+      }
+    },
+    {
+      key: 'parentReferenceKeys',
+      label: 'Parent Reference Keys',
+      type: 'readonly-list',
+      value: [],
+      description: 'Reference keys inherited from connected reference hub (not editable)',
+      conditional: {
+        dependsOn: 'referenceType',
+        value: 'satellite'
+      }
+    }
   ]
 };
 
@@ -265,7 +322,7 @@ const PropertyPanel: React.FC<PropertyPanelProps> = ({
     return null;
   }
 
-  const nodeType = nodeData.type as 'HUB' | 'LNK' | 'SAT';
+  const nodeType = nodeData.type as 'HUB' | 'LNK' | 'SAT' | 'REF';
   
   // Calculate related nodes dynamically
   const getRelatedNodes = () => {
@@ -285,11 +342,12 @@ const PropertyPanel: React.FC<PropertyPanelProps> = ({
     const relatedHubs = connectedNodes.filter(node => node.data.type === 'HUB');
     const relatedLinks = connectedNodes.filter(node => node.data.type === 'LNK');
     const relatedSatellites = connectedNodes.filter(node => node.data.type === 'SAT');
+    const relatedReference = connectedNodes.filter(node => node.data.type === 'REF');
 
-    return { relatedHubs, relatedLinks, relatedSatellites };
+    return { relatedHubs, relatedLinks, relatedSatellites, relatedReference };
   };
 
-  const { relatedHubs, relatedLinks, relatedSatellites } = getRelatedNodes();
+  const { relatedHubs, relatedLinks, relatedSatellites, relatedReference } = getRelatedNodes();
 
   // Update properties with calculated relationships
   const properties = defaultNodeProperties[nodeType]?.map(prop => {
@@ -303,6 +361,10 @@ const PropertyPanel: React.FC<PropertyPanelProps> = ({
       // For satellites, show the hub or link it's connected to
       const parentNode = [...relatedHubs, ...relatedLinks][0];
       return { ...prop, value: parentNode ? [parentNode.data.label] : [] };
+    } else if (prop.key === 'relatedNodes') {
+      // For reference data, show all connected nodes
+      const allRelatedNodes = [...relatedHubs, ...relatedLinks, ...relatedSatellites, ...relatedReference];
+      return { ...prop, value: allRelatedNodes.map(n => n.data.label) };
     }
     return prop;
   }) || [];
@@ -573,7 +635,10 @@ const PropertyPanel: React.FC<PropertyPanelProps> = ({
             <div>
               <h2 className="text-lg font-bold text-surface-900">Node Properties</h2>
               <p className="text-sm text-surface-600">
-                {nodeType === 'HUB' ? 'Hub' : nodeType === 'LNK' ? 'Link' : 'Satellite'}: {nodeData.label}
+                {nodeType === 'HUB' ? 'Hub' : 
+                 nodeType === 'LNK' ? 'Link' : 
+                 nodeType === 'SAT' ? 'Satellite' : 
+                 'Reference Data'}: {nodeData.label}
               </p>
             </div>
           </div>
@@ -603,7 +668,7 @@ const PropertyPanel: React.FC<PropertyPanelProps> = ({
                 className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               />
               <p className="text-xs text-surface-500">
-                The display name for this {nodeType.toLowerCase()}
+                The display name for this {nodeType === 'REF' ? 'reference data' : nodeType.toLowerCase()}
               </p>
             </div>
 

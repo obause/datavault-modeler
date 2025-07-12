@@ -7,12 +7,13 @@ import useStore from '../store/modelStore';
 
 interface DataVaultNodeData {
   label: string;
-  type: 'HUB' | 'LNK' | 'SAT';
+  type: 'HUB' | 'LNK' | 'SAT' | 'REF';
   description?: string;
   properties?: {
     [key: string]: any;
   };
   satelliteType?: 'standard' | 'multi-active' | 'effectivity' | 'record-tracking' | 'non-historized';
+  referenceType?: 'table' | 'hub' | 'satellite';
 }
 
 interface DataVaultNodeProps {
@@ -83,8 +84,11 @@ const DataVaultNode = ({ id, data, selected }: DataVaultNodeProps) => {
   // Get satellite type from node data
   const satelliteType = data.properties?.satelliteType || 'standard';
   
+  // Get reference type from node data
+  const referenceType = data.properties?.referenceType || 'table';
+  
   // Get node styling based on type and properties
-  const getNodeStyle = (type: 'HUB' | 'LNK' | 'SAT', isTransactional: boolean = false, satType: string = 'standard') => {
+  const getNodeStyle = (type: 'HUB' | 'LNK' | 'SAT' | 'REF', isTransactional: boolean = false, satType: string = 'standard', refType: string = 'table') => {
     const getSatelliteTitle = (satType: string) => {
       switch (satType) {
         case 'multi-active':
@@ -97,6 +101,17 @@ const DataVaultNode = ({ id, data, selected }: DataVaultNodeProps) => {
           return 'Non-Historized Satellite';
         default:
           return 'Satellite';
+      }
+    };
+    
+    const getReferenceTitle = (refType: string) => {
+      switch (refType) {
+        case 'hub':
+          return 'Reference Hub';
+        case 'satellite':
+          return 'Reference Satellite';
+        default:
+          return 'Reference Table';
       }
     };
     
@@ -122,11 +137,18 @@ const DataVaultNode = ({ id, data, selected }: DataVaultNodeProps) => {
         icon: 'satellite' as const,
         title: getSatelliteTitle(satType),
       },
+      REF: {
+        background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+        border: '2px solid #10b981',
+        color: 'white',
+        icon: 'archive' as const,
+        title: getReferenceTitle(refType),
+      },
     };
     return styles[type];
   };
 
-  const nodeStyle = getNodeStyle(data.type, isTransactionalLink, satelliteType);
+  const nodeStyle = getNodeStyle(data.type, isTransactionalLink, satelliteType, referenceType);
 
   return (
     <div className="relative">
@@ -224,6 +246,50 @@ const DataVaultNode = ({ id, data, selected }: DataVaultNodeProps) => {
           />
         </>
       )}
+      
+      {data.type === 'REF' && (
+        // Reference nodes: Connection points depend on reference type
+        <>
+          {(referenceType === 'table' || referenceType === 'hub') && (
+            // Reference Tables and Reference Hubs: Source handles (provide reference data)
+            <>
+              <Handle 
+                type="source" 
+                position={Position.Top} 
+                id="ref-output-top"
+                className="w-3 h-3 !bg-green-500 !border-2 !border-white hover:!bg-green-400 transition-colors"
+              />
+              <Handle 
+                type="source" 
+                position={Position.Bottom} 
+                id="ref-output-bottom"
+                className="w-3 h-3 !bg-green-500 !border-2 !border-white hover:!bg-green-400 transition-colors"
+              />
+              <Handle 
+                type="source" 
+                position={Position.Left} 
+                id="ref-output-left"
+                className="w-3 h-3 !bg-green-500 !border-2 !border-white hover:!bg-green-400 transition-colors"
+              />
+              <Handle 
+                type="source" 
+                position={Position.Right} 
+                id="ref-output-right"
+                className="w-3 h-3 !bg-green-500 !border-2 !border-white hover:!bg-green-400 transition-colors"
+              />
+            </>
+          )}
+          {referenceType === 'satellite' && (
+            // Reference Satellites: Target handle (connected to reference hubs)
+            <Handle 
+              type="target" 
+              position={Position.Top} 
+              id="ref-sat-input"
+              className="w-3 h-3 !bg-green-500 !border-2 !border-white hover:!bg-green-400 transition-colors"
+            />
+          )}
+        </>
+      )}
 
       {/* Node Body */}
       <div 
@@ -257,6 +323,15 @@ const DataVaultNode = ({ id, data, selected }: DataVaultNodeProps) => {
                   {satelliteType === 'effectivity' && 'E'}
                   {satelliteType === 'record-tracking' && 'RTS'}
                   {satelliteType === 'non-historized' && 'NH'}
+                </span>
+              </div>
+            )}
+            {/* Reference Type Indicators */}
+            {data.type === 'REF' && referenceType !== 'table' && (
+              <div className="absolute -top-1 -right-1 w-4 h-4 bg-white/90 rounded-full flex items-center justify-center">
+                <span className="text-xs font-bold text-gray-800">
+                  {referenceType === 'hub' && 'H'}
+                  {referenceType === 'satellite' && 'S'}
                 </span>
               </div>
             )}
