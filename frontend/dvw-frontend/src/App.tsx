@@ -9,7 +9,7 @@ import {
   type Node,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import useStore from './store/modelStore';
 import Button from './components/Button';
 import Card from './components/Card';
@@ -20,6 +20,8 @@ import FloatingEdge from './components/FloatingEdge';
 import PropertyPanel from './components/PropertyPanel';
 import Settings from './components/Settings';
 import NotificationContainer from './components/NotificationContainer';
+import ExportDialog from './components/ExportDialog';
+import SplashScreen from './components/SplashScreen';
 import { snapToGrid } from './utils/snapToGrid';
 
 const nodeTypes = {
@@ -60,9 +62,28 @@ function App() {
     updateEdgeTypes,
   } = useStore();
 
+  // Export dialog state
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
+  
+  // Loading state for splash screen
+  const [isLoading, setIsLoading] = useState(true);
+
   // Load settings on app start
   useEffect(() => {
-    loadSettings();
+    const initializeApp = async () => {
+      try {
+        await loadSettings();
+        // Add a small delay to ensure smooth transition
+        setTimeout(() => {
+          setIsLoading(false);
+        }, 1000);
+      } catch (error) {
+        console.error('Failed to load settings:', error);
+        setIsLoading(false);
+      }
+    };
+    
+    initializeApp();
   }, [loadSettings]);
 
   // Update edge types when settings change
@@ -153,8 +174,10 @@ function App() {
   const isAnimated = settings?.edge_animation ?? true;
 
   return (
-    <div className="w-screen h-screen bg-gradient-to-br from-surface-50 to-surface-100">
-      <ReactFlow
+    <>
+      <SplashScreen isLoading={isLoading} />
+      <div className="w-screen h-screen bg-gradient-to-br from-surface-50 to-surface-100">
+        <ReactFlow
         nodes={nodes}
         edges={edges}
         onNodesChange={setNodes}
@@ -262,6 +285,19 @@ function App() {
                 <ModelManager />
               </div>
 
+              {/* Export */}
+              <div className="pt-3 border-t border-surface-200">
+                <Button
+                  variant="secondary"
+                  size="md"
+                  onClick={() => setExportDialogOpen(true)}
+                  leftIcon={<Icon name="download" size="sm" />}
+                  fullWidth
+                >
+                  Export Model
+                </Button>
+              </div>
+
               {/* Settings */}
               <div className="pt-3 border-t border-surface-200">
                 <Button
@@ -312,9 +348,18 @@ function App() {
         onClose={closeSettingsPanel}
       />
       
+      {/* Export Dialog */}
+      <ExportDialog
+        isOpen={exportDialogOpen}
+        onClose={() => setExportDialogOpen(false)}
+        nodes={nodes}
+        currentModelName={currentModelName}
+      />
+      
       {/* Notification Container */}
       <NotificationContainer />
     </div>
+    </>
   );
 }
 
