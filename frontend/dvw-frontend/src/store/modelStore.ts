@@ -89,6 +89,7 @@ interface ModelState {
   updateNodeData: (nodeId: string, newData: any) => void;
   updateNodeProperty: (nodeId: string, propertyKey: string, value: any) => void;
   deleteNode: (nodeId: string) => void;
+  deleteEdge: (edgeId: string) => void;
   cloneNode: (nodeId: string) => void;
   saveModel: (modelName?: string) => Promise<void>;
   loadModel: (modelId: string) => Promise<void>;
@@ -278,7 +279,19 @@ const useStore = create<ModelState>((set, get) => ({
         currentModelId: state.currentModelId,
         currentModelName: state.currentModelName,
       });
-      return { nodes: newNodes, edges: newEdges };
+      return { nodes: newNodes, edges: newEdges, hasUnsavedChanges: true };
+    }),
+
+  deleteEdge: (edgeId) =>
+    set((state) => {
+      const newEdges = state.edges.filter(edge => edge.id !== edgeId);
+      persistModelState({
+        nodes: state.nodes,
+        edges: newEdges,
+        currentModelId: state.currentModelId,
+        currentModelName: state.currentModelName,
+      });
+      return { edges: newEdges, hasUnsavedChanges: true };
     }),
 
   cloneNode: (nodeId) =>

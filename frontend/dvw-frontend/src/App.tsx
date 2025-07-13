@@ -56,6 +56,7 @@ function App() {
     setEdges, 
     updateEdges, 
     addNode: addNodeToStore, 
+    deleteEdge,
     currentModelName, 
     error,
     selectedNodeId,
@@ -210,6 +211,22 @@ function App() {
     importModel(importedNodes, importedEdges, modelName);
   }, [importModel]);
 
+  // Handle keyboard events for edge deletion
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Delete' || event.key === 'Backspace') {
+        const selectedEdge = edges.find(edge => edge.selected);
+        if (selectedEdge) {
+          event.preventDefault();
+          deleteEdge(selectedEdge.id);
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [edges, deleteEdge]);
+
   // Get snap to grid settings
   const snapToGridEnabled = settings?.snap_to_grid || false;
   const gridSize = settings?.grid_size || 16;
@@ -230,12 +247,17 @@ function App() {
         onEdgesChange={setEdges}
         onConnect={onConnect}
         onNodeClick={onNodeClick}
+        onEdgeDoubleClick={(event, edge) => {
+          event.stopPropagation();
+          deleteEdge(edge.id);
+        }}
         fitView
         className="bg-transparent"
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         snapToGrid={snapToGridEnabled}
         snapGrid={[gridSize, gridSize]}
+        elementsSelectable={true}
         defaultEdgeOptions={{
           type: isFloating ? 'floating' : edgeType,
           style: { stroke: '#2d2382', strokeWidth: 3, strokeDasharray: '5,5' },

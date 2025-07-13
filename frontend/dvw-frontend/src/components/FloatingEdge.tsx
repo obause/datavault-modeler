@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { useStore, getSmoothStepPath, type EdgeProps, Position } from '@xyflow/react';
 
-function FloatingEdge({ id, source, target, markerEnd, style }: EdgeProps) {
+function FloatingEdge({ id, source, target, markerEnd, style, selected }: EdgeProps) {
   const sourceNode = useStore(useCallback((store) => store.nodes.find(n => n.id === source), [source]));
   const targetNode = useStore(useCallback((store) => store.nodes.find(n => n.id === target), [target]));
 
@@ -77,14 +77,34 @@ function FloatingEdge({ id, source, target, markerEnd, style }: EdgeProps) {
     targetY: ty,
   });
 
+    // Create selection style
+  const selectionStyle = selected ? {
+    ...style,
+    stroke: style?.stroke || '#2d2382',
+    strokeWidth: (typeof style?.strokeWidth === 'number' ? style.strokeWidth : 3) + 1,
+    filter: 'drop-shadow(0 0 6px rgba(45, 35, 130, 0.4))',
+  } : style;
+
   return (
-    <path
-      id={id}
-      className="react-flow__edge-path"
-      d={edgePath}
-      markerEnd={markerEnd}
-      style={style}
-    />
+    <g>
+      {/* Invisible wider path for easier selection */}
+      <path
+        d={edgePath}
+        fill="none"
+        stroke="transparent"
+        strokeWidth="20"
+        className="react-flow__edge-interaction"
+      />
+      
+      {/* Visible edge path */}
+      <path
+        id={id}
+        className="react-flow__edge-path"
+        d={edgePath}
+        markerEnd={markerEnd}
+        style={selectionStyle}
+      />
+    </g>
   );
 }
 
