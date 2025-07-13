@@ -207,6 +207,12 @@ function App() {
     openPropertyPanel(node.id);
   }, []);
 
+  const onPaneClick = useCallback(() => {
+    // Close property panel when clicking on empty space
+    const { closePropertyPanel } = useStore.getState();
+    closePropertyPanel();
+  }, []);
+
   const handleImport = useCallback((importedNodes: Node[], importedEdges: Edge[], modelName: string) => {
     importModel(importedNodes, importedEdges, modelName);
   }, [importModel]);
@@ -247,6 +253,7 @@ function App() {
         onEdgesChange={setEdges}
         onConnect={onConnect}
         onNodeClick={onNodeClick}
+        onPaneClick={onPaneClick}
         onEdgeDoubleClick={(event, edge) => {
           event.stopPropagation();
           deleteEdge(edge.id);
@@ -448,14 +455,17 @@ function App() {
       </ReactFlow>
       
       {/* About Button - Bottom of Page */}
-      <div className="fixed bottom-4 left-4 z-40">
+      <div className="fixed bottom-2 left-4 z-40">
         <Button
           variant="ghost"
           size="sm"
           onClick={() => setAboutDialogOpen(true)}
-          className="bg-white/80 backdrop-blur-sm border border-surface-200 shadow-sm hover:bg-white/90"
+          className="bg-white/80 backdrop-blur-sm border border-surface-200 shadow-sm hover:bg-white/90 flex items-center gap-2 flex-row"
         >
-          <Icon name="info" size="sm" className="text-surface-600" />
+          <span className="flex items-center gap-2">
+            <Icon name="info" size="sm" className="text-surface-600" />
+            <span className="text-surface-700 font-medium">About</span>
+          </span>
         </Button>
       </div>
       

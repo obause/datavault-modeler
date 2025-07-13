@@ -45,7 +45,7 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onRem
     <div className={`
       relative rounded-lg border p-4 shadow-lg max-w-sm w-full
       transform transition-all duration-300 ease-in-out
-      hover:shadow-xl
+      hover:shadow-xl hover:scale-105
       ${getColorClasses()}
     `}>
       <div className="flex items-start gap-3">
@@ -62,7 +62,7 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onRem
           variant="ghost"
           size="sm"
           onClick={() => onRemove(id)}
-          className="flex-shrink-0 p-1 opacity-60 hover:opacity-100"
+          className="flex-shrink-0 p-1 opacity-60 hover:opacity-100 transition-opacity"
         >
           <Icon name="close" size="sm" />
         </Button>

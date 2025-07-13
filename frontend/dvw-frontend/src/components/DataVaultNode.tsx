@@ -247,6 +247,63 @@ const DataVaultNode = ({ id, data, selected }: DataVaultNodeProps) => {
               zIndex: 10
             }}
           />
+          {/* Add target handles for Links to connect TO Hubs */}
+          <Handle 
+            type="target" 
+            position={Position.Top} 
+            id="hub-input-top"
+            className="w-3 h-3 !bg-blue-600 !border-2 !border-white hover:!bg-blue-500 transition-colors hover:scale-110 !opacity-100 !z-10"
+            style={{
+              background: '#2563eb',
+              border: '2px solid white',
+              width: '10px',
+              height: '10px',
+              opacity: 1,
+              zIndex: 10
+            }}
+          />
+          <Handle 
+            type="target" 
+            position={Position.Bottom} 
+            id="hub-input-bottom"
+            className="w-3 h-3 !bg-blue-600 !border-2 !border-white hover:!bg-blue-500 transition-colors hover:scale-110 !opacity-100 !z-10"
+            style={{
+              background: '#2563eb',
+              border: '2px solid white',
+              width: '10px',
+              height: '10px',
+              opacity: 1,
+              zIndex: 10
+            }}
+          />
+          <Handle 
+            type="target" 
+            position={Position.Left} 
+            id="hub-input-left"
+            className="w-3 h-3 !bg-blue-600 !border-2 !border-white hover:!bg-blue-500 transition-colors hover:scale-110 !opacity-100 !z-10"
+            style={{
+              background: '#2563eb',
+              border: '2px solid white',
+              width: '10px',
+              height: '10px',
+              opacity: 1,
+              zIndex: 10
+            }}
+          />
+          <Handle 
+            type="target" 
+            position={Position.Right} 
+            id="hub-input-right"
+            className="w-3 h-3 !bg-blue-600 !border-2 !border-white hover:!bg-blue-500 transition-colors hover:scale-110 !opacity-100 !z-10"
+            style={{
+              background: '#2563eb',
+              border: '2px solid white',
+              width: '10px',
+              height: '10px',
+              opacity: 1,
+              zIndex: 10
+            }}
+          />
         </>
       )}
       

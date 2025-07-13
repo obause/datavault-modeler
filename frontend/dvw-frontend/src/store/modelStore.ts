@@ -344,7 +344,7 @@ const useStore = create<ModelState>((set, get) => ({
     
     // Show loading notification for manual saves
     if (!isAutoSave) {
-      showNotification.info("Saving...", "Saving model to server", 0); // No auto-dismiss for loading
+      showNotification.info("Saving...", "Saving model to server", 3000); // Auto-dismiss after 3 seconds
     }
     
     try {
@@ -373,16 +373,19 @@ const useStore = create<ModelState>((set, get) => ({
         edges: apiEdges,
       };
       
-      if (currentModelId) {
+      // If a new name is provided and we have an existing model, create a new model instead of updating
+      const shouldCreateNew = modelName && modelName !== currentModelName && currentModelId;
+      
+      if (currentModelId && !shouldCreateNew) {
         // Update existing model
         const response = await modelAPI.updateModel(currentModelId, modelData);
         console.log("Model updated:", response.data);
         
         if (!isAutoSave) {
-          showNotification.success("Model Updated", `"${finalModelName}" has been saved successfully`);
+          showNotification.success("Model Updated", `"${finalModelName}" has been saved successfully`, 5000);
         }
       } else {
-        // Create new model
+        // Create new model (either no existing model or save as with new name)
         const response = await modelAPI.createModel(modelData);
         
         const modelId = response.data.id;
@@ -400,7 +403,7 @@ const useStore = create<ModelState>((set, get) => ({
         console.log("New model created:", response.data);
         
         if (!isAutoSave) {
-          showNotification.success("Model Created", `"${finalModelName}" has been created successfully`);
+          showNotification.success("Model Created", `"${finalModelName}" has been created successfully`, 5000);
         }
       }
       
@@ -408,7 +411,7 @@ const useStore = create<ModelState>((set, get) => ({
       
       // Show auto-save notification for automatic saves
       if (isAutoSave) {
-        showNotification.success("Auto-saved", "Model saved automatically");
+        showNotification.success("Auto-saved", "Model saved automatically", 2000); // Auto-dismiss after 2 seconds
       }
       
       console.log("Model saved successfully");
@@ -417,9 +420,9 @@ const useStore = create<ModelState>((set, get) => ({
       set({ error: "Failed to save model" });
       
       if (!isAutoSave) {
-        showNotification.error("Save Failed", "Failed to save the model to server");
+        showNotification.error("Save Failed", "Failed to save the model to server", 8000);
       } else {
-        showNotification.error("Auto-save failed", "Failed to automatically save the model");
+        showNotification.error("Auto-save failed", "Failed to automatically save the model", 5000);
       }
       throw error; // Re-throw for auto-save error handling
     } finally {
@@ -431,7 +434,7 @@ const useStore = create<ModelState>((set, get) => ({
     set({ isLoading: true, error: null });
     
     // Show loading notification
-    showNotification.info("Loading...", "Loading model from server", 0); // No auto-dismiss for loading
+    showNotification.info("Loading...", "Loading model from server", 3000); // Auto-dismiss after 3 seconds
     
     try {
       const response = await modelAPI.getModel(modelId);
@@ -458,12 +461,12 @@ const useStore = create<ModelState>((set, get) => ({
         currentModelName: model.name,
       });
       
-      showNotification.success("Model Loaded", `"${model.name}" has been loaded successfully`);
+      showNotification.success("Model Loaded", `"${model.name}" has been loaded successfully`, 5000);
       console.log("Model loaded successfully:", model.name);
     } catch (error) {
       console.error("Error loading model:", error);
       set({ error: "Failed to load model" });
-      showNotification.error("Load Failed", "Failed to load the model from server");
+      showNotification.error("Load Failed", "Failed to load the model from server", 8000);
     } finally {
       set({ isLoading: false });
     }
@@ -479,7 +482,7 @@ const useStore = create<ModelState>((set, get) => ({
     } catch (error) {
       console.error("Error loading available models:", error);
       set({ error: "Failed to load available models" });
-      showNotification.error("Load Failed", "Failed to load available models from server");
+      showNotification.error("Load Failed", "Failed to load available models from server", 8000);
     } finally {
       set({ isLoading: false });
     }
@@ -515,7 +518,7 @@ const useStore = create<ModelState>((set, get) => ({
     set({ isLoading: true, error: null });
     
     // Show loading notification
-    showNotification.info("Deleting...", `Deleting "${modelName}" from server`, 0); // No auto-dismiss for loading
+    showNotification.info("Deleting...", `Deleting "${modelName}" from server`, 3000); // Auto-dismiss after 3 seconds
     
     try {
       await modelAPI.deleteModel(modelId);
@@ -545,12 +548,12 @@ const useStore = create<ModelState>((set, get) => ({
       const response = await modelAPI.getAllModels();
       set({ availableModels: response.data });
       
-      showNotification.success("Model Deleted", `"${modelName}" has been deleted successfully`);
+      showNotification.success("Model Deleted", `"${modelName}" has been deleted successfully`, 5000);
       console.log("Model deleted successfully");
     } catch (error) {
       console.error("Error deleting model:", error);
       set({ error: "Failed to delete model" });
-      showNotification.error("Delete Failed", `Failed to delete "${modelName}" from server`);
+      showNotification.error("Delete Failed", `Failed to delete "${modelName}" from server`, 8000);
     } finally {
       set({ isLoading: false });
     }
@@ -584,14 +587,14 @@ const useStore = create<ModelState>((set, get) => ({
     } catch (error) {
       console.error("Error loading settings:", error);
       set({ settingsError: "Failed to load settings", settingsLoading: false });
-      showNotification.error("Settings Load Failed", "Failed to load settings from server");
+      showNotification.error("Settings Load Failed", "Failed to load settings from server", 8000);
     }
   },
   updateSettings: async (settings) => {
     set({ settingsLoading: true, settingsError: null });
     
     // Show loading notification
-    showNotification.info("Updating...", "Saving settings to server", 0); // No auto-dismiss for loading
+    showNotification.info("Updating...", "Saving settings to server", 3000); // Auto-dismiss after 3 seconds
     
     try {
       const response = await settingsAPI.updateSettings(settings);
@@ -605,19 +608,19 @@ const useStore = create<ModelState>((set, get) => ({
       // Update existing edges with new settings
       updateEdgeTypes();
       
-      showNotification.success("Settings Saved", "Your preferences have been saved successfully");
+      showNotification.success("Settings Saved", "Your preferences have been saved successfully", 5000);
       console.log("Settings updated:", response.data);
     } catch (error) {
       console.error("Error updating settings:", error);
       set({ settingsError: "Failed to update settings", settingsLoading: false });
-      showNotification.error("Settings Update Failed", "Failed to save settings to server");
+      showNotification.error("Settings Update Failed", "Failed to save settings to server", 8000);
     }
   },
   resetSettings: async () => {
     set({ settingsLoading: true, settingsError: null });
     
     // Show loading notification
-    showNotification.info("Resetting...", "Resetting settings to defaults", 0); // No auto-dismiss for loading
+    showNotification.info("Resetting...", "Resetting settings to defaults", 3000); // Auto-dismiss after 3 seconds
     
     try {
       const response = await settingsAPI.resetSettings();
@@ -631,12 +634,12 @@ const useStore = create<ModelState>((set, get) => ({
       // Update existing edges with reset settings
       updateEdgeTypes();
       
-      showNotification.success("Settings Reset", "All settings have been reset to defaults");
+      showNotification.success("Settings Reset", "All settings have been reset to defaults", 5000);
       console.log("Settings reset:", response.data);
     } catch (error) {
       console.error("Error resetting settings:", error);
       set({ settingsError: "Failed to reset settings", settingsLoading: false });
-      showNotification.error("Settings Reset Failed", "Failed to reset settings on server");
+      showNotification.error("Settings Reset Failed", "Failed to reset settings on server", 8000);
     }
   },
   openSettingsPanel: () => {
@@ -762,7 +765,7 @@ const useStore = create<ModelState>((set, get) => ({
     state.startAutoSave();
     
     // Show success notification
-    showNotification.success("Model Imported", `"${modelName}" has been imported successfully`);
+    showNotification.success("Model Imported", `"${modelName}" has been imported successfully`, 5000);
     
     console.log(`Model "${modelName}" imported with ${nodes.length} nodes and ${edges.length} edges`);
   },
