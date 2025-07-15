@@ -3,7 +3,8 @@ import Button from './Button';
 import Card from './Card';
 import Icon from './Icon';
 import useStore from '../store/modelStore';
-import type { UpdateSettings } from '../api';
+import type { UpdateSettings, GlobalColumn } from '../api';
+import { DEFAULT_GLOBAL_COLUMNS, COLUMN_MARKERS } from '../types/columns';
 
 interface SettingsProps {
   isOpen: boolean;
@@ -43,6 +44,15 @@ const Settings: React.FC<SettingsProps> = ({ isOpen, onClose }) => {
         floating_edges: settings.floating_edges,
         edge_animation: settings.edge_animation,
         show_connection_points: settings.show_connection_points,
+        global_columns: settings.global_columns || DEFAULT_GLOBAL_COLUMNS.map(col => ({
+          id: col.id,
+          name: col.name,
+          dataType: col.dataType,
+          markers: col.markers.map(marker => marker.type),
+          description: col.description,
+          isRequired: col.isRequired,
+          isEnabled: true
+        })),
       });
       setIsDirty(false);
     }
@@ -80,6 +90,15 @@ const Settings: React.FC<SettingsProps> = ({ isOpen, onClose }) => {
         floating_edges: settings.floating_edges,
         edge_animation: settings.edge_animation,
         show_connection_points: settings.show_connection_points,
+        global_columns: settings.global_columns || DEFAULT_GLOBAL_COLUMNS.map(col => ({
+          id: col.id,
+          name: col.name,
+          dataType: col.dataType,
+          markers: col.markers.map(marker => marker.type),
+          description: col.description,
+          isRequired: col.isRequired,
+          isEnabled: true
+        })),
       });
       setIsDirty(false);
     }
@@ -272,6 +291,109 @@ const Settings: React.FC<SettingsProps> = ({ isOpen, onClose }) => {
                       Edge animation
                     </label>
                   </div>
+                </div>
+              </div>
+
+              {/* Global Columns Settings */}
+              <div>
+                <h3 className="text-lg font-semibold text-surface-900 mb-4">Global Columns</h3>
+                <p className="text-sm text-surface-600 mb-4">
+                  Configure columns that appear in all node types by default.
+                </p>
+                <div className="space-y-3">
+                  {(formData.global_columns || []).map((column, index) => (
+                    <div key={column.id} className="border border-surface-200 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="checkbox"
+                            id={`global_column_${column.id}`}
+                            checked={column.isEnabled || false}
+                            onChange={(e) => {
+                              const newColumns = [...(formData.global_columns || [])];
+                              newColumns[index] = { ...column, isEnabled: e.target.checked };
+                              handleInputChange('global_columns', newColumns);
+                            }}
+                            className="w-4 h-4 text-primary-600 border-surface-300 rounded focus:ring-primary-500"
+                          />
+                          <label htmlFor={`global_column_${column.id}`} className="text-sm font-medium text-surface-700">
+                            {column.name}
+                          </label>
+                        </div>
+                        <div className="flex gap-1">
+                          {column.markers.map((markerType) => {
+                            const marker = COLUMN_MARKERS[markerType];
+                            return marker ? (
+                              <span
+                                key={markerType}
+                                className="inline-block px-2 py-1 text-xs font-medium text-white rounded"
+                                style={{ backgroundColor: marker.color }}
+                                title={marker.description}
+                              >
+                                {marker.label}
+                              </span>
+                            ) : null;
+                          })}
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 gap-3 mb-3">
+                        <div>
+                          <label className="block text-xs font-medium text-surface-600 mb-1">
+                            Column Name
+                          </label>
+                          <input
+                            type="text"
+                            value={column.name}
+                            onChange={(e) => {
+                              const newColumns = [...(formData.global_columns || [])];
+                              newColumns[index] = { ...column, name: e.target.value };
+                              handleInputChange('global_columns', newColumns);
+                            }}
+                            className="w-full px-2 py-1 text-sm border border-surface-300 rounded focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-transparent"
+                            disabled={!column.isEnabled}
+                            placeholder="Enter column name"
+                          />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs font-medium text-surface-600 mb-1">
+                            Data Type
+                          </label>
+                          <input
+                            type="text"
+                            value={column.dataType}
+                            onChange={(e) => {
+                              const newColumns = [...(formData.global_columns || [])];
+                              newColumns[index] = { ...column, dataType: e.target.value };
+                              handleInputChange('global_columns', newColumns);
+                            }}
+                            className="w-full px-2 py-1 text-sm border border-surface-300 rounded focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-transparent"
+                            disabled={!column.isEnabled}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-surface-600 mb-1">
+                            Required
+                          </label>
+                          <input
+                            type="checkbox"
+                            checked={column.isRequired || false}
+                            onChange={(e) => {
+                              const newColumns = [...(formData.global_columns || [])];
+                              newColumns[index] = { ...column, isRequired: e.target.checked };
+                              handleInputChange('global_columns', newColumns);
+                            }}
+                            className="w-4 h-4 text-primary-600 border-surface-300 rounded focus:ring-primary-500"
+                            disabled={!column.isEnabled}
+                          />
+                        </div>
+                      </div>
+                      {column.description && (
+                        <p className="text-xs text-surface-500 mt-2">{column.description}</p>
+                      )}
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>

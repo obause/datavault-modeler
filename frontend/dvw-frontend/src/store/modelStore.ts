@@ -73,6 +73,8 @@ interface ModelState {
   error: string | null;
   selectedNodeId: string | null;
   propertyPanelOpen: boolean;
+  // View mode state
+  viewMode: 'simple' | 'column';
   // Settings state
   settings: Settings | null;
   settingsLoading: boolean;
@@ -115,6 +117,8 @@ interface ModelState {
   updateEdgeTypes: () => void;
   // Import actions
   importModel: (nodes: Node[], edges: Edge[], modelName: string) => void;
+  // View mode actions
+  setViewMode: (mode: 'simple' | 'column') => void;
 }
 
 // Transform API node to React Flow format
@@ -169,6 +173,8 @@ const useStore = create<ModelState>((set, get) => ({
   error: null,
   selectedNodeId: null,
   propertyPanelOpen: false,
+  // View mode state
+  viewMode: 'simple',
   // Settings state
   settings: null,
   settingsLoading: false,
@@ -768,6 +774,11 @@ const useStore = create<ModelState>((set, get) => ({
     showNotification.success("Model Imported", `"${modelName}" has been imported successfully`, 5000);
     
     console.log(`Model "${modelName}" imported with ${nodes.length} nodes and ${edges.length} edges`);
+  },
+
+  // View mode actions
+  setViewMode: (mode: 'simple' | 'column') => {
+    set({ viewMode: mode });
   },
 }));
 

@@ -29,12 +29,22 @@ class EdgeCreateSerializer(serializers.ModelSerializer):
         fields = ["id", "source", "target", "data"]
 
 class SettingsSerializer(serializers.ModelSerializer):
+    def to_representation(self, instance):
+        """Ensure global_columns is always populated"""
+        data = super().to_representation(instance)
+        
+        # If global_columns is empty, populate with defaults
+        if not data.get('global_columns'):
+            data['global_columns'] = Settings.get_default_global_columns()
+            
+        return data
+    
     class Meta:
         model = Settings
         fields = [
             'id', 'theme', 'auto_save', 'auto_save_interval', 'snap_to_grid', 
             'grid_size', 'edge_type', 'floating_edges', 'edge_animation', 'show_connection_points',
-            'created_at', 'updated_at'
+            'global_columns', 'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
 

@@ -26,23 +26,24 @@ import SplashScreen from './components/SplashScreen';
 import AboutDialog from './components/AboutDialog';
 import { snapToGrid } from './utils/snapToGrid';
 
-const nodeTypes = {
-  hub: DataVaultNode,
-  link: DataVaultNode,
-  satellite: DataVaultNode,
-  lnk: DataVaultNode,
-  sat: DataVaultNode,
-  ref: DataVaultNode,
-  pit: DataVaultNode,
-  bridge: DataVaultNode,
-  HUB: DataVaultNode,
-  LNK: DataVaultNode,
-  SAT: DataVaultNode,
-  REF: DataVaultNode,
-  PIT: DataVaultNode,
-  BRIDGE: DataVaultNode,
-  default: DataVaultNode,
-};
+// Create node types with props passed down
+const createNodeTypes = (allNodes: any[], allEdges: any[]) => ({
+  hub: (props: any) => <DataVaultNode {...props} allNodes={allNodes} allEdges={allEdges} />,
+  link: (props: any) => <DataVaultNode {...props} allNodes={allNodes} allEdges={allEdges} />,
+  satellite: (props: any) => <DataVaultNode {...props} allNodes={allNodes} allEdges={allEdges} />,
+  lnk: (props: any) => <DataVaultNode {...props} allNodes={allNodes} allEdges={allEdges} />,
+  sat: (props: any) => <DataVaultNode {...props} allNodes={allNodes} allEdges={allEdges} />,
+  ref: (props: any) => <DataVaultNode {...props} allNodes={allNodes} allEdges={allEdges} />,
+  pit: (props: any) => <DataVaultNode {...props} allNodes={allNodes} allEdges={allEdges} />,
+  bridge: (props: any) => <DataVaultNode {...props} allNodes={allNodes} allEdges={allEdges} />,
+  HUB: (props: any) => <DataVaultNode {...props} allNodes={allNodes} allEdges={allEdges} />,
+  LNK: (props: any) => <DataVaultNode {...props} allNodes={allNodes} allEdges={allEdges} />,
+  SAT: (props: any) => <DataVaultNode {...props} allNodes={allNodes} allEdges={allEdges} />,
+  REF: (props: any) => <DataVaultNode {...props} allNodes={allNodes} allEdges={allEdges} />,
+  PIT: (props: any) => <DataVaultNode {...props} allNodes={allNodes} allEdges={allEdges} />,
+  BRIDGE: (props: any) => <DataVaultNode {...props} allNodes={allNodes} allEdges={allEdges} />,
+  default: (props: any) => <DataVaultNode {...props} allNodes={allNodes} allEdges={allEdges} />,
+});
 
 const edgeTypes = {
   floating: FloatingEdge,
@@ -70,6 +71,8 @@ function App() {
     loadSettings,
     updateEdgeTypes,
     importModel,
+    viewMode,
+    setViewMode,
   } = useStore();
 
   // Export dialog state
@@ -241,6 +244,9 @@ function App() {
   const edgeType = settings?.edge_type || 'smoothstep';
   const isFloating = settings?.floating_edges ?? true;
   const isAnimated = settings?.edge_animation ?? true;
+
+  // Create node types with current nodes and edges
+  const nodeTypes = createNodeTypes(nodes, edges);
 
   return (
     <>
@@ -417,6 +423,31 @@ function App() {
                 >
                   Import Model
                 </Button>
+              </div>
+
+              {/* View Mode Toggle */}
+              <div className="pt-3 border-t border-surface-200">
+                <h2 className="text-sm font-semibold text-surface-700 uppercase tracking-wide mb-3">
+                  View Mode
+                </h2>
+                <div className="flex rounded-lg border border-surface-200 p-1 bg-surface-50">
+                  <Button
+                    variant={viewMode === 'simple' ? 'primary' : 'ghost'}
+                    size="sm"
+                    onClick={() => setViewMode('simple')}
+                    className="flex-1"
+                  >
+                    Simple
+                  </Button>
+                  <Button
+                    variant={viewMode === 'column' ? 'primary' : 'ghost'}
+                    size="sm"
+                    onClick={() => setViewMode('column')}
+                    className="flex-1"
+                  >
+                    Columns
+                  </Button>
+                </div>
               </div>
 
               {/* Settings */}

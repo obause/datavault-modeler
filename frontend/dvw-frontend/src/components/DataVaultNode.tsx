@@ -4,6 +4,8 @@ import { clsx } from 'clsx';
 import Button from './Button';
 import Icon from './Icon';
 import useStore from '../store/modelStore';
+import { generateNodeColumns, DEFAULT_GLOBAL_COLUMNS, COLUMN_MARKERS } from '../types/columns';
+import type { ColumnDefinition } from '../types/columns';
 
 interface DataVaultNodeData {
   label: string;
@@ -20,15 +22,17 @@ interface DataVaultNodeProps {
   id: string;
   data: DataVaultNodeData;
   selected?: boolean;
+  allNodes?: any[];
+  allEdges?: any[];
 }
 
-const DataVaultNode = ({ id, data, selected }: DataVaultNodeProps) => {
+const DataVaultNode = ({ id, data, selected, allNodes = [], allEdges = [] }: DataVaultNodeProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(data.label);
   const [showToolbar, setShowToolbar] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   
-  const { updateNodeData, deleteNode, cloneNode, settings } = useStore();
+  const { updateNodeData, deleteNode, cloneNode, settings, viewMode } = useStore();
 
   // Auto-focus input when editing starts
   useEffect(() => {
@@ -83,6 +87,57 @@ const DataVaultNode = ({ id, data, selected }: DataVaultNodeProps) => {
 
   // Get satellite type from node data
   const satelliteType = data.properties?.satelliteType || 'standard';
+
+  // Generate table name based on node type and properties
+  const generateTableName = (nodeData: any): string => {
+    const baseName = nodeData.label.toLowerCase().replace(/\s+/g, '_');
+    
+    switch (nodeData.type) {
+      case 'HUB':
+        return `${baseName}_h`;
+      
+      case 'LNK':
+        return `${baseName}_l`;
+      
+      case 'SAT':
+        const satType = nodeData.properties?.satelliteType || 'standard';
+        switch (satType) {
+          case 'multi-active':
+            return `${baseName}_mas`;
+          case 'effectivity':
+            return `${baseName}_es`;
+          case 'non-historized':
+            return `${baseName}_nhs`;
+          case 'record-tracking':
+            return `${baseName}_rts`;
+          default: // standard
+            return `${baseName}_s`;
+        }
+      
+      case 'REF':
+        const refType = nodeData.properties?.referenceType || 'table';
+        switch (refType) {
+          case 'hub':
+            return `${baseName}_rh`;
+          case 'satellite':
+            return `${baseName}_rs`;
+          default: // table
+            return `${baseName}_r`;
+        }
+      
+      case 'PIT':
+        return `${baseName}_bp`;
+      
+      case 'BRIDGE':
+        return `${baseName}_bs`;
+      
+      default:
+        return baseName;
+    }
+  };
+
+  // Get table name (use custom name if provided, otherwise generate)
+  const tableName = data.properties?.tableName || generateTableName(data);
   
   // Get reference type from node data
   const referenceType = data.properties?.referenceType || 'table';
@@ -166,6 +221,62 @@ const DataVaultNode = ({ id, data, selected }: DataVaultNodeProps) => {
   };
 
   const nodeStyle = getNodeStyle(data.type, isTransactionalLink, satelliteType, referenceType);
+
+  // Get columns for the current node type
+  const globalColumns = settings?.global_columns || DEFAULT_GLOBAL_COLUMNS.map(col => ({
+    id: col.id,
+    name: col.name,
+    dataType: col.dataType,
+    markers: col.markers.map(marker => marker.type),
+    description: col.description,
+    isRequired: col.isRequired,
+    isEnabled: true
+  }));
+
+  const enabledGlobalColumns = globalColumns.filter(col => col.isEnabled).map(col => ({
+    id: col.id,
+    name: col.name,
+    dataType: col.dataType,
+    markers: col.markers.map(markerType => COLUMN_MARKERS[markerType]).filter(Boolean),
+    description: col.description,
+    isRequired: col.isRequired,
+    isGlobal: true
+  }));
+
+  const nodeColumns = generateNodeColumns(id, data, data.type, enabledGlobalColumns, allNodes, allEdges);
+
+  // Column display component
+  const ColumnList = ({ columns }: { columns: ColumnDefinition[] }) => (
+    <div className="w-full mt-3 space-y-1">
+      <div className="text-xs font-medium opacity-90 border-b border-white/20 pb-1">
+        Columns
+      </div>
+      <div className="space-y-1 max-h-48 overflow-y-auto">
+        {columns.map((column) => (
+          <div key={column.id} className="flex items-center justify-between text-xs">
+            <div className="flex items-center gap-1 min-w-0 flex-1">
+              <span className="truncate">{column.name}</span>
+              {column.isRequired && (
+                <span className="text-red-200 text-xs">*</span>
+              )}
+            </div>
+            <div className="flex items-center gap-1 flex-shrink-0">
+              {column.markers.map((marker) => (
+                <span
+                  key={marker.type}
+                  className="inline-block px-1 py-0.5 text-[10px] font-medium text-white rounded"
+                  style={{ backgroundColor: marker.color }}
+                  title={marker.description}
+                >
+                  {marker.label}
+                </span>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 
   return (
     <div className="relative">
@@ -622,9 +733,10 @@ const DataVaultNode = ({ id, data, selected }: DataVaultNodeProps) => {
       {/* Node Body */}
       <div 
         className={clsx(
-          'px-4 rounded-lg shadow-md transition-all duration-200 min-w-[140px] cursor-pointer hover:shadow-lg relative',
+          'px-4 rounded-lg shadow-md transition-all duration-200 cursor-pointer hover:shadow-lg relative',
           selected && 'ring-2 ring-primary-500 ring-offset-2',
-          hashkeyName ? 'py-2 pb-6' : 'py-2'
+          'py-2 pb-6', // Always add bottom padding for table name
+          viewMode === 'column' ? 'min-w-[200px] max-w-[300px]' : 'min-w-[140px]'
         )}
         style={{
           background: nodeStyle.background,
@@ -705,12 +817,15 @@ const DataVaultNode = ({ id, data, selected }: DataVaultNodeProps) => {
           </div>
         </div>
 
-        {/* Hashkey Display - bottom right */}
-        {hashkeyName && (
-          <div className="absolute bottom-1.5 right-2 text-xs font-light opacity-70">
-            {hashkeyName}
-          </div>
+        {/* Column Display - only in column view mode */}
+        {viewMode === 'column' && (
+          <ColumnList columns={nodeColumns} />
         )}
+
+        {/* Table Name Display - bottom right */}
+        <div className="absolute bottom-1.5 right-2 text-xs font-light opacity-70">
+          {tableName}
+        </div>
       </div>
 
       {/* Toolbar - appears when selected */}

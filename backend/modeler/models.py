@@ -55,6 +55,9 @@ class Settings(models.Model):
     edge_animation = models.BooleanField(default=True)
     show_connection_points = models.BooleanField(default=True)
     
+    # Global column settings
+    global_columns = models.JSONField(default=list, help_text="Global columns that appear in all node types")
+    
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -80,6 +83,30 @@ class Settings(models.Model):
         return super().save(*args, **kwargs)
     
     @classmethod
+    def get_default_global_columns(cls):
+        """Get the default global columns configuration"""
+        return [
+            {
+                'id': 'record_source',
+                'name': 'record_source',
+                'dataType': 'VARCHAR(100)',
+                'markers': ['RSRC'],
+                'description': 'Source system identifier',
+                'isRequired': True,
+                'isEnabled': True
+            },
+            {
+                'id': 'load_date',
+                'name': 'load_date',
+                'dataType': 'TIMESTAMP',
+                'markers': ['LDTS'],
+                'description': 'Date when record was loaded',
+                'isRequired': True,
+                'isEnabled': True
+            }
+        ]
+
+    @classmethod
     def get_instance(cls):
         """Get the single settings instance, creating it if it doesn't exist"""
         obj, created = cls.objects.get_or_create(
@@ -93,6 +120,13 @@ class Settings(models.Model):
                 'floating_edges': True,
                 'edge_animation': True,
                 'show_connection_points': True,
+                'global_columns': cls.get_default_global_columns(),
             }
         )
+        
+        # Ensure global_columns is always populated, even for existing records
+        if not obj.global_columns:
+            obj.global_columns = cls.get_default_global_columns()
+            obj.save()
+        
         return obj

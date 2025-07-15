@@ -43,8 +43,19 @@ export interface Settings {
   floating_edges: boolean;
   edge_animation: boolean;
   show_connection_points: boolean;
+  global_columns: GlobalColumn[];
   created_at: string;
   updated_at: string;
+}
+
+export interface GlobalColumn {
+  id: string;
+  name: string;
+  dataType: string;
+  markers: string[];
+  description?: string;
+  isRequired?: boolean;
+  isEnabled?: boolean;
 }
 
 export interface UpdateSettings {
@@ -57,6 +68,7 @@ export interface UpdateSettings {
   floating_edges?: boolean;
   edge_animation?: boolean;
   show_connection_points?: boolean;
+  global_columns?: GlobalColumn[];
 }
 
 // Types for creating nodes/edges (without model field)

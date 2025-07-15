@@ -33,6 +33,14 @@ const baseProperties: PropertyDefinition[] = [
     description: 'Detailed description of this Data Vault component'
   },
   {
+    key: 'tableName',
+    label: 'Table Name',
+    type: 'text',
+    value: '',
+    placeholder: 'Auto-generated based on node type',
+    description: 'Database table name (leave empty for auto-generation)'
+  },
+  {
     key: 'tags',
     label: 'Tags',
     type: 'tags',
@@ -81,20 +89,20 @@ export const defaultNodeProperties: NodeTypeProperties = {
       description: 'Source systems providing data to this hub'
     },
     {
-      key: 'businessKey',
-      label: 'Business Key',
-      type: 'text',
-      value: '',
-      placeholder: 'Enter business key definition',
-      description: 'The unique business identifier for this hub'
-    },
-    {
       key: 'hashkeyName',
       label: 'Hashkey Name',
       type: 'text',
       value: '',
       placeholder: 'e.g., hub_customer_hashkey',
       description: 'Name of the hashkey column'
+    },
+    {
+      key: 'businessKeys',
+      label: 'Business Keys',
+      type: 'list',
+      value: [],
+      placeholder: 'Add business key',
+      description: 'Business key columns for this hub'
     }
   ],
   LNK: [
@@ -194,7 +202,11 @@ export const defaultNodeProperties: NodeTypeProperties = {
       type: 'text',
       value: '',
       placeholder: 'e.g., sat_customer_hashdiff',
-      description: 'Name of the hashdiff column (not applicable for non-historized satellites)'
+      description: 'Name of the hashdiff column (not applicable for non-historized satellites)',
+      conditional: {
+        dependsOn: 'satelliteType',
+        value: ['standard', 'multi-active']
+      }
     },
     {
       key: 'multiActiveKey',
@@ -209,15 +221,39 @@ export const defaultNodeProperties: NodeTypeProperties = {
       }
     },
     {
-      key: 'trackedColumn',
-      label: 'Tracked Column',
+      key: 'effectiveFromColumn',
+      label: 'Effective From Column',
       type: 'text',
       value: '',
-      placeholder: 'e.g., deleted_flag',
-      description: 'Name of the column inside the source that should be tracked for deletes',
+      placeholder: 'e.g., effective_from_date',
+      description: 'Name of the effective from column',
       conditional: {
         dependsOn: 'satelliteType',
-        value: ['effectivity', 'record-tracking']
+        value: 'effectivity'
+      }
+    },
+    {
+      key: 'effectiveToColumn',
+      label: 'Effective To Column',
+      type: 'text',
+      value: '',
+      placeholder: 'e.g., effective_to_date',
+      description: 'Name of the effective to column',
+      conditional: {
+        dependsOn: 'satelliteType',
+        value: 'effectivity'
+      }
+    },
+    {
+      key: 'isDeletedColumn',
+      label: 'Is Deleted Column',
+      type: 'text',
+      value: '',
+      placeholder: 'e.g., is_deleted',
+      description: 'Name of the column that tracks deletion status',
+      conditional: {
+        dependsOn: 'satelliteType',
+        value: 'record-tracking'
       }
     },
     {
@@ -291,6 +327,30 @@ export const defaultNodeProperties: NodeTypeProperties = {
         dependsOn: 'referenceType',
         value: 'satellite'
       }
+    },
+    {
+      key: 'hashdiffName',
+      label: 'Hashdiff Name',
+      type: 'text',
+      value: '',
+      placeholder: 'e.g., ref_hashdiff',
+      description: 'Name of the hashdiff column for reference satellite',
+      conditional: {
+        dependsOn: 'referenceType',
+        value: 'satellite'
+      }
+    },
+    {
+      key: 'descriptiveAttributes',
+      label: 'Descriptive Attributes',
+      type: 'list',
+      value: [],
+      placeholder: 'Add descriptive attribute',
+      description: 'Descriptive attributes for reference data',
+      conditional: {
+        dependsOn: 'referenceType',
+        value: ['table', 'satellite']
+      }
     }
   ],
   PIT: [
@@ -314,8 +374,16 @@ export const defaultNodeProperties: NodeTypeProperties = {
       label: 'Dimension Key Name',
       type: 'text',
       value: '',
-      placeholder: 'e.g., pit_customer_dimension_key',
-      description: 'Name of the dimension key column in the PIT table'
+      placeholder: 'e.g., dim_customer_key',
+      description: 'Name of the dimension key column'
+    },
+    {
+      key: 'snapshotDateColumn',
+      label: 'Snapshot Date Column',
+      type: 'text',
+      value: '',
+      placeholder: 'e.g., snapshot_date',
+      description: 'Name of the snapshot date column'
     },
     {
       key: 'logarithmicPIT',
@@ -333,6 +401,22 @@ export const defaultNodeProperties: NodeTypeProperties = {
       type: 'readonly-list',
       value: [],
       description: 'Nodes that this bridge table connects (automatically determined)'
+    },
+    {
+      key: 'snapshotDateColumn',
+      label: 'Snapshot Date Column',
+      type: 'text',
+      value: '',
+      placeholder: 'e.g., snapshot_date',
+      description: 'Name of the snapshot date column'
+    },
+    {
+      key: 'computedAttributes',
+      label: 'Computed Attributes',
+      type: 'list',
+      value: [],
+      placeholder: 'Add computed attribute',
+      description: 'Computed attributes in this bridge table'
     }
   ]
 };
