@@ -81,9 +81,6 @@ const DataVaultNode = ({ id, data, selected, allNodes = [], allEdges = [] }: Dat
 
   // Check if this is a transactional link
   const isTransactionalLink = data.type === 'LNK' && data.properties?.isTransactional === true;
-  
-  // Get hashkey property if available
-  const hashkeyName = data.properties?.hashkeyName || data.properties?.hashdiffName;
 
   // Get satellite type from node data
   const satelliteType = data.properties?.satelliteType || 'standard';

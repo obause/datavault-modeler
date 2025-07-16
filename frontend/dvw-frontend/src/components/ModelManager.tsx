@@ -19,8 +19,10 @@ const ModelManager: React.FC = () => {
   } = useStore();
 
   const [isOpen, setIsOpen] = useState(false);
-  const [saveAsName, setSaveAsName] = useState("");
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [newModelName, setNewModelName] = useState("");
   const [showSaveAs, setShowSaveAs] = useState(false);
+  const [saveAsName, setSaveAsName] = useState("");
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -28,6 +30,10 @@ const ModelManager: React.FC = () => {
       loadAvailableModels();
     }
   }, [isOpen, loadAvailableModels]);
+
+  useEffect(() => {
+    setNewModelName(currentModelName);
+  }, [currentModelName]);
 
   const handleSave = async () => {
     await saveModel();
@@ -41,6 +47,14 @@ const ModelManager: React.FC = () => {
       setShowSaveAs(false);
       setIsOpen(false);
     }
+  };
+
+  const handleRename = async () => {
+    if (newModelName.trim() && newModelName.trim() !== currentModelName) {
+      setModelName(newModelName.trim());
+      await saveModel();
+    }
+    setIsRenaming(false);
   };
 
   const handleLoad = async (modelId: string) => {
@@ -82,7 +96,7 @@ const ModelManager: React.FC = () => {
 
       {isOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <Card className="w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+          <Card className="w-full max-w-6xl max-h-[95vh] overflow-hidden flex flex-col">
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-surface-200">
               <div className="flex items-center gap-3">
@@ -115,151 +129,269 @@ const ModelManager: React.FC = () => {
                 </div>
               )}
 
-              {/* Current Model Section */}
-              <div className="mb-8">
-                <h3 className="text-lg font-semibold text-surface-900 mb-4">Current Model</h3>
-                <Card variant="outlined" padding="lg">
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-surface-700 mb-2">
-                        Model Name
-                      </label>
-                      <input
-                        type="text"
-                        value={currentModelName}
-                        onChange={(e) => setModelName(e.target.value)}
-                        className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                        placeholder="Enter model name"
-                      />
-                    </div>
-                    
-                    <div className="flex flex-wrap gap-2">
-                      <Button
-                        variant="primary"
-                        size="md"
-                        onClick={handleSave}
-                        isLoading={isLoading}
-                        leftIcon={<Icon name="save" size="sm" />}
-                      >
-                        Save
-                      </Button>
-                      
-                      <Button
-                        variant="outline"
-                        size="md"
-                        onClick={() => setShowSaveAs(!showSaveAs)}
-                        leftIcon={<Icon name="edit" size="sm" />}
-                      >
-                        Save As...
-                      </Button>
-                      
-                      <Button
-                        variant="accent"
-                        size="md"
-                        onClick={handleNewModel}
-                        leftIcon={<Icon name="plus" size="sm" />}
-                      >
-                        New Model
-                      </Button>
-                    </div>
-
-                    {/* Save As Input */}
-                    {showSaveAs && (
-                      <div className="pt-4 border-t border-surface-200">
-                        <label className="block text-sm font-medium text-surface-700 mb-2">
-                          Save As New Model
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Current Model Section */}
+                <div>
+                  <h3 className="text-lg font-semibold text-surface-900 mb-4 flex items-center gap-2">
+                    <Icon name="file" size="sm" className="text-primary-600" />
+                    Current Model
+                  </h3>
+                  <Card variant="outlined" padding="lg" className="h-full">
+                    <div className="space-y-6">
+                      {/* Model Name Display */}
+                      <div>
+                        <label className="block text-sm font-medium text-surface-700 mb-3">
+                          Model Name
                         </label>
-                        <div className="flex gap-2">
-                          <input
-                            type="text"
-                            value={saveAsName}
-                            onChange={(e) => setSaveAsName(e.target.value)}
-                            placeholder="Enter new model name"
-                            className="flex-1 px-3 py-2 border border-surface-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                            onKeyPress={(e) => e.key === 'Enter' && handleSaveAs()}
-                          />
-                          <Button
-                            variant="secondary"
-                            size="md"
-                            onClick={handleSaveAs}
-                            disabled={!saveAsName.trim() || isLoading}
-                            isLoading={isLoading}
-                          >
-                            Save
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </Card>
-              </div>
-
-              {/* Existing Models Section */}
-              <div>
-                <h3 className="text-lg font-semibold text-surface-900 mb-4">Existing Models</h3>
-                
-                {isLoading && (
-                  <div className="text-center py-8">
-                    <Icon name="refresh" size="lg" className="text-surface-400 animate-spin mx-auto mb-2" />
-                    <p className="text-surface-600">Loading models...</p>
-                  </div>
-                )}
-                
-                {!isLoading && availableModels.length === 0 && (
-                  <Card variant="outlined" padding="lg">
-                    <div className="text-center py-8">
-                      <Icon name="folder" size="xl" className="text-surface-400 mx-auto mb-3" />
-                      <p className="text-surface-600 text-lg mb-2">No models found</p>
-                      <p className="text-surface-500 text-sm">Create your first model to get started!</p>
-                    </div>
-                  </Card>
-                )}
-                
-                {!isLoading && availableModels.length > 0 && (
-                  <div className="space-y-3">
-                    {availableModels.map((model) => (
-                      <Card key={model.id} variant="outlined" padding="lg" className="hover:shadow-md transition-shadow">
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-3 mb-2">
-                              <div className="w-8 h-8 bg-gradient-to-br from-secondary-500 to-secondary-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                                <Icon name="folder" size="sm" className="text-white" />
-                              </div>
-                              <h4 className="font-semibold text-surface-900 truncate">{model.name}</h4>
-                            </div>
-                            <div className="flex items-center gap-4 text-sm text-surface-600">
-                              <span>Created: {formatDate(model.created_at)}</span>
-                              <span>•</span>
-                              <span>{model.nodes.length} nodes</span>
-                              <span>•</span>
-                              <span>{model.edges.length} edges</span>
+                        {isRenaming ? (
+                          <div className="space-y-3">
+                            <input
+                              type="text"
+                              value={newModelName}
+                              onChange={(e) => setNewModelName(e.target.value)}
+                              className="w-full px-3 py-2 border border-surface-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                              placeholder="Enter new model name"
+                              autoFocus
+                              onKeyPress={(e) => e.key === 'Enter' && handleRename()}
+                              onKeyDown={(e) => e.key === 'Escape' && setIsRenaming(false)}
+                            />
+                            <div className="flex gap-2">
+                              <Button
+                                variant="primary"
+                                size="sm"
+                                onClick={handleRename}
+                                disabled={!newModelName.trim() || newModelName.trim() === currentModelName}
+                                isLoading={isLoading}
+                              >
+                                Save
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setIsRenaming(false);
+                                  setNewModelName(currentModelName);
+                                }}
+                              >
+                                Cancel
+                              </Button>
                             </div>
                           </div>
-                          <div className="flex gap-2">
-                            <Button
-                              variant="primary"
-                              size="sm"
-                              onClick={() => handleLoad(model.id)}
-                              disabled={isLoading}
-                              leftIcon={<Icon name="download" size="sm" />}
-                            >
-                              Load
-                            </Button>
+                        ) : (
+                          <div className="flex items-center justify-between p-3 bg-surface-50 border border-surface-200 rounded-lg">
+                            <span className="font-medium text-surface-900 truncate">{currentModelName}</span>
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => setDeleteConfirmId(model.id)}
-                              disabled={isLoading}
-                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              onClick={() => setIsRenaming(true)}
+                              className="text-surface-600 hover:text-surface-900"
                             >
-                              <Icon name="trash" size="sm" />
+                              <Icon name="edit" size="sm" />
                             </Button>
                           </div>
+                        )}
+                      </div>
+                      
+                      {/* Action Buttons */}
+                      <div className="space-y-3">
+                        <Button
+                          variant="primary"
+                          size="md"
+                          onClick={handleSave}
+                          isLoading={isLoading}
+                          leftIcon={<Icon name="save" size="sm" />}
+                          fullWidth
+                        >
+                          Save Current Model
+                        </Button>
+                        
+                        <Button
+                          variant="outline"
+                          size="md"
+                          onClick={() => setShowSaveAs(!showSaveAs)}
+                          leftIcon={<Icon name="file" size="sm" />}
+                          fullWidth
+                        >
+                          Save As Copy
+                        </Button>
+                        
+                        <Button
+                          variant="accent"
+                          size="md"
+                          onClick={handleNewModel}
+                          leftIcon={<Icon name="plus" size="sm" />}
+                          fullWidth
+                        >
+                          Create New Model
+                        </Button>
+                      </div>
+
+                      {/* Save As Input */}
+                      {showSaveAs && (
+                        <div className="pt-4 border-t border-surface-200 space-y-3">
+                          <label className="block text-sm font-medium text-surface-700">
+                            Save As New Model
+                          </label>
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              value={saveAsName}
+                              onChange={(e) => setSaveAsName(e.target.value)}
+                              placeholder="Enter new model name"
+                              className="flex-1 px-3 py-2 border border-surface-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                              onKeyPress={(e) => e.key === 'Enter' && handleSaveAs()}
+                              onKeyDown={(e) => e.key === 'Escape' && setShowSaveAs(false)}
+                            />
+                            <Button
+                              variant="secondary"
+                              size="md"
+                              onClick={handleSaveAs}
+                              disabled={!saveAsName.trim() || isLoading}
+                              isLoading={isLoading}
+                            >
+                              Save
+                            </Button>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setShowSaveAs(false);
+                              setSaveAsName("");
+                            }}
+                            className="text-surface-600 hover:text-surface-900"
+                          >
+                            Cancel
+                          </Button>
                         </div>
-                      </Card>
-                    ))}
-                  </div>
-                )}
+                      )}
+
+                      {/* Model Stats */}
+                      <div className="pt-4 border-t border-surface-200">
+                        <h4 className="text-sm font-medium text-surface-700 mb-3">Model Statistics</h4>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="text-center p-3 bg-blue-50 rounded-lg">
+                            <div className="text-2xl font-bold text-blue-600">
+                              {availableModels.find(m => m.name === currentModelName)?.nodes.length || 0}
+                            </div>
+                            <div className="text-xs text-blue-700">Nodes</div>
+                          </div>
+                          <div className="text-center p-3 bg-green-50 rounded-lg">
+                            <div className="text-2xl font-bold text-green-600">
+                              {availableModels.find(m => m.name === currentModelName)?.edges.length || 0}
+                            </div>
+                            <div className="text-xs text-green-700">Edges</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                </div>
+
+                {/* Existing Models Section */}
+                <div>
+                  <h3 className="text-lg font-semibold text-surface-900 mb-4 flex items-center gap-2">
+                    <Icon name="folder" size="sm" className="text-secondary-600" />
+                    Available Models
+                  </h3>
+                  
+                  {isLoading && (
+                    <div className="text-center py-12">
+                      <Icon name="refresh" size="lg" className="text-surface-400 animate-spin mx-auto mb-3" />
+                      <p className="text-surface-600">Loading models...</p>
+                    </div>
+                  )}
+                  
+                  {!isLoading && availableModels.length === 0 && (
+                    <Card variant="outlined" padding="lg" className="h-full">
+                      <div className="text-center py-12">
+                        <div className="w-16 h-16 bg-surface-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                          <Icon name="folder" size="xl" className="text-surface-400" />
+                        </div>
+                        <h4 className="text-lg font-semibold text-surface-900 mb-2">No models found</h4>
+                        <p className="text-surface-600 mb-4">Create your first model to get started!</p>
+                        <Button
+                          variant="primary"
+                          size="md"
+                          onClick={handleNewModel}
+                          leftIcon={<Icon name="plus" size="sm" />}
+                        >
+                          Create First Model
+                        </Button>
+                      </div>
+                    </Card>
+                  )}
+                  
+                  {!isLoading && availableModels.length > 0 && (
+                    <div className="space-y-3 max-h-[500px] overflow-y-auto">
+                      {availableModels.map((model) => (
+                        <Card 
+                          key={model.id} 
+                          variant="outlined" 
+                          padding="md" 
+                          className={`hover:shadow-md transition-all duration-200 cursor-pointer ${
+                            model.name === currentModelName ? 'ring-2 ring-primary-500 bg-primary-50' : ''
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1 min-w-0" onClick={() => handleLoad(model.id)}>
+                              <div className="flex items-center gap-3 mb-2">
+                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                                  model.name === currentModelName 
+                                    ? 'bg-primary-600' 
+                                    : 'bg-gradient-to-br from-secondary-500 to-secondary-600'
+                                }`}>
+                                  <Icon name="folder" size="sm" className="text-white" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <h4 className="font-semibold text-surface-900 truncate flex items-center gap-2">
+                                    {model.name}
+                                    {model.name === currentModelName && (
+                                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary-100 text-primary-800">
+                                        Current
+                                      </span>
+                                    )}
+                                  </h4>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-4 text-sm text-surface-600">
+                                <span>{formatDate(model.created_at)}</span>
+                                <span>•</span>
+                                <span>{model.nodes.length} nodes</span>
+                                <span>•</span>
+                                <span>{model.edges.length} edges</span>
+                              </div>
+                            </div>
+                            <div className="flex gap-1">
+                              {model.name !== currentModelName && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleLoad(model.id)}
+                                  disabled={isLoading}
+                                  className="text-primary-600 hover:text-primary-700 hover:bg-primary-50"
+                                  title="Load model"
+                                >
+                                  <Icon name="download" size="sm" />
+                                </Button>
+                              )}
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setDeleteConfirmId(model.id)}
+                                disabled={isLoading}
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                title="Delete model"
+                              >
+                                <Icon name="trash" size="sm" />
+                              </Button>
+                            </div>
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </Card>

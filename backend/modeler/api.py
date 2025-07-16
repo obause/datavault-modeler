@@ -4,6 +4,7 @@ from rest_framework import status
 from rest_framework.decorators import action
 from .models import DataModel, Node, Edge, Settings
 import logging
+import uuid
 
 logger = logging.getLogger(__name__)
 
@@ -73,18 +74,40 @@ class DataModelCreateUpdateSerializer(serializers.ModelSerializer):
         # Create the model first
         data_model = DataModel.objects.create(**validated_data)
         
-        # Create nodes
+        # Create a mapping of old node IDs to new node IDs
+        node_id_mapping = {}
+        
+        # Create nodes with new UUIDs
         for node_data in nodes_data:
+            old_id = node_data.get('id')
+            new_id = str(uuid.uuid4())
+            node_id_mapping[old_id] = new_id
+            
+            # Create node with new ID
             Node.objects.create(
+                id=new_id,
                 model=data_model,
-                **node_data
+                type=node_data.get('type'),
+                x=node_data.get('x', 0),
+                y=node_data.get('y', 0),
+                data=node_data.get('data', {})
             )
         
-        # Create edges
+        # Create edges with updated source/target references
         for edge_data in edges_data:
+            old_source = edge_data.get('source')
+            old_target = edge_data.get('target')
+            
+            # Map old IDs to new IDs
+            new_source = node_id_mapping.get(old_source, old_source)
+            new_target = node_id_mapping.get(old_target, old_target)
+            
             Edge.objects.create(
+                id=str(uuid.uuid4()),
                 model=data_model,
-                **edge_data
+                source=new_source,
+                target=new_target,
+                data=edge_data.get('data', {})
             )
         
         return data_model
