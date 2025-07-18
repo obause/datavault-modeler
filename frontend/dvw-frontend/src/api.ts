@@ -10,18 +10,34 @@ export const api = axios.create({
 export interface DataModel {
   id: string;
   name: string;
+  description: string;
+  version: string;
   created_at: string;
+  updated_at: string;
+  tags: string[];
   nodes: ApiNode[];
   edges: ApiEdge[];
+  // Enhanced Data Vault components
+  hubs: any[];
+  links: any[];
+  satellites: any[];
+  references: any[];
+  point_in_times: any[];
+  bridges: any[];
 }
 
 export interface ApiNode {
   id: string;
   model: string;
-  type: "HUB" | "LNK" | "SAT";
+  type: "HUB" | "LNK" | "SAT" | "REF" | "PIT" | "BRIDGE";
   x: number;
   y: number;
   data: any;
+  name: string;
+  table_name: string;
+  description: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface ApiEdge {
@@ -30,6 +46,10 @@ export interface ApiEdge {
   source: string;
   target: string;
   data: any;
+  name: string;
+  description: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Settings {
@@ -74,10 +94,13 @@ export interface UpdateSettings {
 // Types for creating nodes/edges (without model field)
 export interface CreateApiNode {
   id: string;
-  type: "HUB" | "LNK" | "SAT";
+  type: "HUB" | "LNK" | "SAT" | "REF" | "PIT" | "BRIDGE";
   x: number;
   y: number;
   data: any;
+  name?: string;
+  table_name?: string;
+  description?: string;
 }
 
 export interface CreateApiEdge {
@@ -85,10 +108,15 @@ export interface CreateApiEdge {
   source: string;
   target: string;
   data: any;
+  name?: string;
+  description?: string;
 }
 
 export interface CreateDataModel {
   name: string;
+  description?: string;
+  version?: string;
+  tags?: string[];
   nodes?: CreateApiNode[];
   edges?: CreateApiEdge[];
 }

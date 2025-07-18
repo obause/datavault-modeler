@@ -3,7 +3,7 @@ import Button from './Button';
 import Card from './Card';
 import Icon from './Icon';
 import useStore from '../store/modelStore';
-import type { UpdateSettings, GlobalColumn } from '../api';
+import type { UpdateSettings } from '../api';
 import { DEFAULT_GLOBAL_COLUMNS, COLUMN_MARKERS } from '../types/columns';
 
 interface SettingsProps {
